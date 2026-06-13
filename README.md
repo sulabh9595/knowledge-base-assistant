@@ -1,25 +1,51 @@
-# Knowledge Base Application
+# Knowledge Base Assistant
 
-A local-first AI knowledge base assistant scaffold built with FastAPI and modular architecture.
+[![GitHub stars](https://img.shields.io/github/stars/sulabh9595/knowledge-base-assistant?style=flat-square)](https://github.com/sulabh9595/knowledge-base-assistant)
+[![GitHub repo size](https://img.shields.io/github/repo-size/sulabh9595/knowledge-base-assistant?style=flat-square)](https://github.com/sulabh9595/knowledge-base-assistant)
+
+A local-first AI knowledge base assistant built with FastAPI, Streamlit, Ollama, Chroma, and LangGraph.
+
+This repository ingests Confluence pages, stores them locally, and serves both RAG and graph-based reasoning APIs for grounded question answering.
+
+Repository: https://github.com/sulabh9595/knowledge-base-assistant
+
+## Features
+
+- Ingest Confluence spaces into a local knowledge base
+- Persist documents to `memory/documents.json`
+- Reload persisted data on backend startup
+- RAG search via Chroma and Ollama inference
+- LangGraph agent reasoning with graph node citations
+- Streamlit frontend for ingestion and query testing
+- Docker Compose support for local deployment
+
+## Technology stack
+
+- Python 3.12+
+- FastAPI backend
+- Streamlit frontend
+- Ollama LLM (`Qwen3:8b` default)
+- Nomic embeddings (`nomic-embed-text`)
+- Chroma vector store
+- LangGraph-style knowledge graph reasoning
+- Pytest for automated testing
+
+## Repository description
+
+**Local AI knowledge base assistant with FastAPI, Streamlit, Ollama, RAG, and LangGraph.**
 
 ## Project structure
 
-- `app/` - application code
-- `agents/` - agent orchestration modules
-- `graph/` - graph database and knowledge graph logic
-- `rag/` - retrieval-augmented generation pipeline
-- `loaders/` - source connectors and ingestion loaders
-- `embeddings/` - embeddings adapters
-- `vectorstore/` - vector store integrations
-- `memory/` - session and conversation memory
-- `tools/` - utility agents and helpers
-- `frontend/` - future user interface code
+- `app/` - FastAPI routes, services, models, and RAG pipeline
+- `graph/` - LangGraph reasoning and knowledge graph logic
+- `frontend/` - Streamlit user interface
+- `memory/` - persisted documents and local memory store
+- `docker/` - Docker Compose and container setup
 - `tests/` - unit and integration tests
-- `docker/` - container definitions
 
 ## Quick start
 
-1. Create a virtual environment:
+1. Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -28,92 +54,93 @@ python -m pip install -U pip
 python -m pip install -r requirements.txt
 ```
 
-2. Create a `.env` file from `.env.example` and set your Confluence and Ollama credentials.
+2. Copy `.env.example` to `.env` and configure:
 
-3. Start the API:
+```bash
+cp .env.example .env
+```
+
+Set values for:
+
+- `OLLAMA_HOST`
+- `OLLAMA_MODEL` (default `Qwen3:8b`)
+- `EMBEDDING_MODEL` (default `nomic-embed-text`)
+- `CONFLUENCE_BASE_URL`
+- `CONFLUENCE_EMAIL`
+- `CONFLUENCE_API_TOKEN`
+
+3. Start the backend:
 
 ```bash
 python -m uvicorn app.main:app --reload
 ```
 
-4. Open `http://127.0.0.1:8000`.
-
-## Streamlit UI
-
-Start the frontend with:
+4. Start the frontend:
 
 ```bash
 streamlit run frontend/app.py
 ```
 
-Then open `http://localhost:8501`.
+5. Open the UI at `http://localhost:8501`.
 
-## Docker
+## API endpoints
 
-Build and run both backend and frontend with Docker Compose:
+- `GET /health`
+- `POST /ingest/confluence`
+- `POST /rag/query`
+- `POST /agent/langgraph/query`
+- `GET /documents`
+- `GET /documents/{id}`
+- `PATCH /documents/{id}`
+- `DELETE /documents/{id}`
+- `POST /documents/reindex`
+
+## Example requests
+
+### Confluence ingestion
 
 ```bash
-docker compose up --build
+curl -X POST http://127.0.0.1:8000/ingest/confluence \
+  -H 'Content-Type: application/json' \
+  -d '{"space_key":"YOUR_SPACE_KEY"}'
 ```
 
-This exposes:
-- `http://127.0.0.1:8000` for the FastAPI backend
-- `http://127.0.0.1:8501` for the Streamlit UI
+### RAG query
+
+```bash
+curl -X POST http://127.0.0.1:8000/rag/query \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What is the knowledge base about?","top_k":3}'
+```
+```
+
+### LangGraph agent query
+
+```bash
+curl -X POST http://127.0.0.1:8000/agent/langgraph/query \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What are the main topics in the knowledge base?","top_k":3}'
+```
+```
 
 ## Tests
 
-Run the test suite with:
+Run the full test suite with:
 
 ```bash
 pytest
 ```
 
-or via the project script:
+## Docker
+
+Launch the backend and frontend locally:
 
 ```bash
-python -m pytest
+docker compose up --build
 ```
 
-## Confluence ingestion
+## Notes
 
-POST `/ingest/confluence`
-
-Request body:
-
-```json
-{
-  "space_key": "YOUR_SPACE_KEY"
-}
-```
-
-The endpoint ingests pages from the specified Confluence space and adds them to the local RAG and LangGraph stores.
-
-## RAG query
-
-POST `/rag/query`
-
-Request body:
-
-```json
-{
-  "question": "What is the main topic of the knowledge base?",
-  "top_k": 3
-}
-```
-
-The endpoint retrieves the most relevant documents and returns an LLM-generated answer grounded in those sources.
-
-## LangGraph agent query
-
-POST `/agent/langgraph/query`
-
-Request body:
-
-```json
-{
-  "question": "What are the main concepts covered in the ingested knowledge?",
-  "top_k": 3
-}
-```
-
-The endpoint returns a graph-based reasoning answer along with the top graph nodes that were used by the agent and source citations for the evidence used in the response.
+- The backend reloads persisted documents on startup from `memory/documents.json`.
+- The default Ollama model is `Qwen3:8b`.
+- The Streamlit UI is a lightweight test interface for ingestion and queries.
