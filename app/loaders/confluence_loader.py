@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Document loader for Confluence spaces.
+# Use: Connects to Confluence API, downloads pages, and extracts plain text.
+
 from __future__ import annotations
 
 import html
@@ -23,7 +27,9 @@ def html_to_text(html_content: str) -> str:
     extractor = _HTMLTextExtractor()
     extractor.feed(html_content)
     text = extractor.get_text()
-    return html.unescape(text)
+    cleaned = " ".join(text.split())
+    return html.unescape(cleaned)
+
 
 
 class ConfluenceLoader:

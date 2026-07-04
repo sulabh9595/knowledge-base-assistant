@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Service layer for Confluence operations.
+# Use: Coordinates space ingestion, loader execution, and document storage.
+
 from __future__ import annotations
 
 from typing import List, Optional

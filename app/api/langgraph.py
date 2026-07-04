@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: API router for graph agent query endpoint.
+# Use: Handles requests to ask questions using the knowledge graph agent reasoning.
+
 import httpx
 
 from fastapi import APIRouter, HTTPException

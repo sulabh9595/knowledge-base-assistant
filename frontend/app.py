@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Streamlit web application frontend.
+# Use: Provides a user interface to run health checks, ingest pages, and query models.
+
 import os
 import streamlit as st
 import httpx
@@ -20,6 +24,14 @@ def post_json(path: str, payload: dict) -> dict:
         return response.json()
 
 
+def post_file(path: str, files: dict) -> dict:
+    url = f"{BASE_URL}{path}"
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, files=files)
+        response.raise_for_status()
+        return response.json()
+
+
 def get_json(path: str) -> dict:
     url = f"{BASE_URL}{path}"
     with httpx.Client(timeout=30) as client:
@@ -29,9 +41,9 @@ def get_json(path: str) -> dict:
 
 
 st.title("Knowledge Base Assistant")
-st.markdown("A simple Streamlit UI for Confluence ingestion, RAG querying, and LangGraph agent reasoning.")
+st.markdown("A simple Streamlit UI for document ingestion, RAG querying, and LangGraph agent reasoning.")
 
-tabs = st.tabs(["Health", "Confluence Ingestion", "RAG Query", "LangGraph Agent"])
+tabs = st.tabs(["Health", "Document Ingestion", "RAG Query", "LangGraph Agent"])
 
 with tabs[0]:
     st.header("Service Health")
@@ -44,25 +56,47 @@ with tabs[0]:
             st.error(f"Health check failed: {exc}")
 
 with tabs[1]:
-    st.header("Confluence Ingestion")
-    space_key = st.text_input("Space Key", key="confluence_space_key")
-    if st.button("Ingest Confluence Space"):
-        if not space_key:
-            st.warning("Enter a Confluence space key before ingesting.")
-        else:
-            try:
-                result = post_json("/ingest/confluence", {"space_key": space_key})
-                page_count = result.get("page_count", 0)
-                if page_count == 0:
-                    st.warning(
-                        "No pages were ingested from that space. "
-                        "Please verify the space key, your Confluence permissions, and that the space contains pages."
-                    )
-                else:
-                    st.success(f"Ingested {page_count} pages.")
-                st.json(result)
-            except httpx.HTTPError as exc:
-                st.error(f"Confluence ingestion failed: {exc}")
+    st.header("Document Ingestion")
+
+    ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload"])
+
+    if ingest_type == "Confluence Space":
+        space_key = st.text_input("Space Key", key="confluence_space_key")
+        if st.button("Ingest Confluence Space"):
+            if not space_key:
+                st.warning("Enter a Confluence space key before ingesting.")
+            else:
+                try:
+                    result = post_json("/ingest/confluence", {"space_key": space_key})
+                    page_count = result.get("page_count", 0)
+                    if page_count == 0:
+                        st.warning(
+                            "No pages were ingested from that space. "
+                            "Please verify the space key, your Confluence permissions, and that the space contains pages."
+                        )
+                    else:
+                        st.success(f"Ingested {page_count} pages.")
+                    st.json(result)
+                except httpx.HTTPError as exc:
+                    st.error(f"Confluence ingestion failed: {exc}")
+
+    elif ingest_type == "Local File Upload":
+        uploaded_file = st.file_uploader(
+            "Choose a PDF, Word, or Text file",
+            type=["pdf", "docx", "txt", "md"]
+        )
+        if st.button("Upload and Ingest File"):
+            if not uploaded_file:
+                st.warning("Please select a file first.")
+            else:
+                try:
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+                    result = post_file("/ingest/file", files)
+                    st.success(f"Ingested file '{result.get('title')}' successfully!")
+                    st.json(result)
+                except httpx.HTTPError as exc:
+                    st.error(f"File ingestion failed: {exc}")
+
 
 with tabs[2]:
     st.header("RAG Query")

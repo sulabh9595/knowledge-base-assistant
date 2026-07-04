@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: API router for service health checks.
+# Use: Returns status information to monitor if the backend is running.
+
 from fastapi import APIRouter
 from app.models.schemas import HealthResponse
 

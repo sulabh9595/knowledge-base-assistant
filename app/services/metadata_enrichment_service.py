@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Metadata enrichment service for document files.
+# Use: Automatically extracts summaries, counts words, and generates search tags.
+
 from __future__ import annotations
 
 import re

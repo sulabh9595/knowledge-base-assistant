@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: API router for CRUD operations on documents.
+# Use: Exposes endpoints to get, list, update, and delete ingested documents.
+
 import httpx
 
 from fastapi import APIRouter, HTTPException

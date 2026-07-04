@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Simple in-memory mock vector store repository.
+# Use: Used for lightweight testing without persistent database dependencies.
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional

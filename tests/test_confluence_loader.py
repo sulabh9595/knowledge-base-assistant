@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Test suite for the ConfluenceLoader class.
+# Use: Verifies HTML clean-up and mock paginated space fetching.
+
 from app.loaders.confluence_loader import ConfluenceLoader, html_to_text
 
 

@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: API router for standard RAG query endpoint.
+# Use: Handles requests to ask questions using the standard search-and-answer pipeline.
+
 import httpx
 
 from fastapi import APIRouter, HTTPException

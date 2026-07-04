@@ -1,0 +1,40 @@
+groups:
+  - name: application_alerts
+    rules:
+      - alert: APIInstanceDown
+        expr: up{job="fastapi-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FastAPI Backend is down"
+          description: "Backend container has been unreachable for more than 1 minute."
+
+      - alert: HighRAGLatency
+        expr: histogram_quantile(0.95, sum(rate(kb_rag_query_latency_seconds_bucket[5m])) by (le)) > 15
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile RAG query latency is high"
+          description: "P95 query latency is {{ $value }}s (threshold: 15s)."
+
+      - alert: LLMGenerationFailure
+        expr: rate(kb_ingestion_failures_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High document ingestion failure rate"
+          description: "Ingestion is failing at a rate of {{ $value }} failures per second."
+
+  - name: infrastructure_alerts
+    rules:
+      - alert: ContainerOutOfMemory
+        expr: container_memory_usage_bytes{name=~"backend|frontend|chroma"} / container_spec_memory_limit_bytes > 0.85
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container running out of memory"
+          description: "Container {{ $labels.name }} is using >85% of memory limit."

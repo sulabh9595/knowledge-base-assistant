@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Test suite for the EmbeddingProvider class.
+# Use: Mocks and validates text-to-vector embedding creation.
+
 import pytest
 
 from app.embeddings.embeddings import EmbeddingProvider

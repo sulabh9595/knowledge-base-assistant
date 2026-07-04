@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Manages embedding creation using Ollama API.
+# Use: Provides mathematical representations of text for similarity search.
+
 from __future__ import annotations
 
 from typing import Optional, Sequence

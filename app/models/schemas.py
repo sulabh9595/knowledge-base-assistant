@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Data models and validation schemas using Pydantic.
+# Use: Validates API request payloads and structures API responses.
+
 from typing import Any
 
 from typing import Any, Optional
@@ -95,3 +99,11 @@ class LangGraphQueryResponse(BaseModel):
     answer: str
     nodes: list[LangGraphNodeSummary]
     citations: list[LangGraphCitation]
+
+
+class FileIngestResponse(BaseModel):
+    status: str
+    page_id: str
+    title: str
+    word_count: int
+

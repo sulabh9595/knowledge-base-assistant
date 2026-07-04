@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Initializes the vector store package.
+# Use: Exposes ChromaStore and InMemoryStore implementations.
+
 """Vector store integrations."""
 
 from .chroma_store import ChromaStore

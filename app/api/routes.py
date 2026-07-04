@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Main API router aggregator.
+# Use: Combines and registers all individual API sub-routers.
+
 from fastapi import APIRouter
 
 from app.api.health import router as health_router

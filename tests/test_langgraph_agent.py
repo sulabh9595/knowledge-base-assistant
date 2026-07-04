@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Test suite for LangGraphAgent and KnowledgeGraph.
+# Use: Asserts that graph nodes connect correctly and agent queries return citations.
+
 from app.services.langgraph_agent_service import LangGraphAgentService
 
 

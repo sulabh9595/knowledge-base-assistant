@@ -1,3 +1,8 @@
+# Creator: Sulabh Bansod
+# Description: Configuration settings module using Pydantic.
+# Use: Loads and provides environment variables from the .env file.
+
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,8 +22,15 @@ class Settings(BaseSettings):
     chroma_persist_directory: str = "./chroma_store"
     chroma_collection_name: str = "knowledge_base"
     memory_store_file: str = "./memory/documents.json"
+    langfuse_enabled: bool = False
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = Field(
+        default="https://cloud.langfuse.com",
+        validation_alias=AliasChoices("LANGFUSE_HOST", "LANGFUSE_BASE_URL"),
+    )
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

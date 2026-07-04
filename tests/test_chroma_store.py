@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Test suite for the ChromaStore class.
+# Use: Asserts adding, deleting, and query retrieval of documents in Chroma DB.
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 

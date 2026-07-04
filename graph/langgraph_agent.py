@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: LangGraph agent logic and Knowledge Graph structure.
+# Use: Links documents together as keyword nodes and uses AI reasoning over the graph.
+
 from __future__ import annotations
 
 import math

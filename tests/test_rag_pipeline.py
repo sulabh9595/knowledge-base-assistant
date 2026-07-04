@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Test suite for the RAGPipeline.
+# Use: Verifies page chunking, indexing, and LLM query-answering logic.
+
 from app.rag.pipeline import RAGPipeline
 from app.services.llm_service import OllamaService
 from langchain.docstore.document import Document

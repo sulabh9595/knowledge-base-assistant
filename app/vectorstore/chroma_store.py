@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Chroma DB vector store repository implementation.
+# Use: Indexes text embeddings and performs conceptual similarity searches.
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -35,7 +39,14 @@ class ChromaStore(VectorStoreRepository):
         self.store.add_documents(documents)
 
     def similarity_search_with_score(self, query: str, k: int = 5) -> list[tuple[Document, float]]:
-        return self.store.similarity_search_with_score(query, k=k)
+        import time
+        from app.utils.metrics import VECTOR_SEARCH_LATENCY
+
+        start_time = time.time()
+        try:
+            return self.store.similarity_search_with_score(query, k=k)
+        finally:
+            VECTOR_SEARCH_LATENCY.observe(time.time() - start_time)
 
     def as_retriever(self, search_kwargs: Optional[dict[str, Any]] = None) -> BaseRetriever:
         return self.store.as_retriever(search_kwargs=search_kwargs or {})

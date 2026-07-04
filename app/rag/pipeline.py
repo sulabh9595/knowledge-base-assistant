@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: RAG (Retrieval-Augmented Generation) pipeline manager.
+# Use: Chunks documents, indexes them, and feeds matching content to LLM to answer queries.
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -10,6 +14,7 @@ from app.services.llm_service import OllamaService
 from app.vectorstore.chroma_store import ChromaStore
 from app.vectorstore.interfaces import VectorStoreRepository
 from app.config.settings import settings
+from app.services.langfuse_service import LangfuseService
 
 
 class RAGPipeline:
@@ -29,6 +34,7 @@ class RAGPipeline:
             chunk_overlap=200,
         )
         self.llm_service = llm_service
+        self.langfuse_service = LangfuseService()
 
     def ingest_documents(self, documents: list[dict]) -> None:
         if not documents:
@@ -38,41 +44,57 @@ class RAGPipeline:
         self.vector_store.add_documents(chunks)
 
     def answer_question(self, question: str, top_k: int = 3) -> dict:
-        retriever = self.vector_store.as_retriever(search_kwargs={"k": top_k})
-        relevant_documents = retriever.get_relevant_documents(question)
-        retrieved_with_scores = self.vector_store.similarity_search_with_score(question, k=top_k)
+        import time
+        from app.utils.metrics import RAG_QUERY_LATENCY
 
-        if not relevant_documents:
-            retrieved_with_scores = []
+        start_time = time.time()
+        try:
+            retriever = self.vector_store.as_retriever(search_kwargs={"k": top_k})
+            relevant_documents = retriever.get_relevant_documents(question)
+            retrieved_with_scores = self.vector_store.similarity_search_with_score(question, k=top_k)
 
-        results: List[Dict] = []
-        for document, score in retrieved_with_scores:
-            metadata = document.metadata or {}
-            results.append(
-                {
-                    "page_id": metadata.get("page_id", ""),
-                    "title": metadata.get("title", ""),
-                    "source_url": metadata.get("source_url", ""),
-                    "text": document.page_content,
-                    "metadata": metadata,
-                    "similarity_score": float(score),
-                }
+            if not relevant_documents:
+                retrieved_with_scores = []
+
+            results: List[Dict] = []
+            for document, score in retrieved_with_scores:
+                metadata = document.metadata or {}
+                results.append(
+                    {
+                        "page_id": metadata.get("page_id", ""),
+                        "title": metadata.get("title", ""),
+                        "source_url": metadata.get("source_url", ""),
+                        "text": document.page_content,
+                        "metadata": metadata,
+                        "similarity_score": float(score),
+                    }
+                )
+
+            context = "\n\n".join(
+                f"Title: {doc.get('title')}\nURL: {doc.get('source_url')}\nContent:\n{doc.get('text')}"
+                for doc in results
             )
+            prompt = self._build_prompt(question, context)
+            if self.llm_service is None:
+                self.llm_service = OllamaService()
 
-        context = "\n\n".join(
-            f"Title: {doc.get('title')}\nURL: {doc.get('source_url')}\nContent:\n{doc.get('text')}"
-            for doc in results
-        )
-        prompt = self._build_prompt(question, context)
-        if self.llm_service is None:
-            self.llm_service = OllamaService()
-        answer = self.llm_service.generate(prompt)
+            with self.langfuse_service.trace_rag_query(
+                question=question,
+                retrieved_documents=results,
+                model=getattr(self.llm_service, "model", settings.ollama_model),
+                metadata={"top_k": top_k},
+            ) as trace:
+                answer = self.llm_service.generate(prompt)
+                if trace is not None:
+                    trace.update(output={"answer": answer})
 
-        return {
-            "question": question,
-            "answer": answer,
-            "retrieved_documents": results,
-        }
+                return {
+                    "question": question,
+                    "answer": answer,
+                    "retrieved_documents": results,
+                }
+        finally:
+            RAG_QUERY_LATENCY.observe(time.time() - start_time)
 
     def _chunk_documents(self, documents: list[dict]) -> List[Document]:
         chunks: List[Document] = []

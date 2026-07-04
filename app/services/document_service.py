@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Service layer for document database management.
+# Use: Handles saving, retrieving, updating, and deleting document files locally.
+
 from __future__ import annotations
 
 import json

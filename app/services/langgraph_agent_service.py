@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Service layer wrapping the LangGraph reasoning agent.
+# Use: Provides agent initialization and query execution interfaces.
+
 from __future__ import annotations
 
 from typing import Optional

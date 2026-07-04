@@ -26,8 +26,9 @@ Build a local-first AI Knowledge Base Assistant.
 Knowledge sources:
 
 * Confluence
-* PDFs (future)
-* Word Documents (future)
+* PDFs (local upload)
+* Word Documents (local upload)
+* Text/Markdown (local upload)
 * SharePoint (future)
 * Databases (future)
 
@@ -39,18 +40,22 @@ Allow users to ask natural language questions and receive grounded answers based
 
 # Current Implementation Overview
 
-This project currently implements a local FastAPI backend with:
+The project currently implements a local-first AI knowledge base assistant with:
 
-* `app/main.py` — FastAPI app startup, health endpoint, and persisted document reload.
-* `app/config/settings.py` — Pydantic settings for Ollama host/model, embedding model, and persistence paths.
-* `app/services/document_service.py` — document persistence to `memory/documents.json` and document metadata enrichment.
-* `app/api/ingestion.py` — Confluence ingestion endpoint that saves documents and ingests them into both RAG and LangGraph.
-* `app/api/rag.py` — RAG query endpoint.
+* `app/main.py` — FastAPI application entrypoint, health endpoint, and startup hooks.
+* `app/api/routes.py` — router aggregation for health, ingestion, RAG, LangGraph, and document APIs.
+* `app/config/settings.py` — Pydantic settings for Ollama, embeddings, Chroma persistence, and optional Langfuse configuration.
+* `app/services/document_service.py` — persistence of ingested documents to `memory/documents.json` with metadata enrichment.
+* `app/loaders/file_loader.py` — local file ingestion for PDF, DOCX, TXT, and MD content.
+* `app/api/ingestion.py` — Confluence and file upload ingestion endpoints that persist documents and index them into both RAG and LangGraph.
+* `app/api/rag.py` — standard RAG query endpoint.
 * `app/api/langgraph.py` — LangGraph agent query endpoint.
-* `graph/langgraph_agent.py` — LangGraph reasoning, keyword/edge scoring, embedding-enhanced relevance, citation formatting, and Ollama prompt generation.
-* `frontend/app.py` — Streamlit UI that sends queries to the backend and renders cleaned answers as markdown.
+* `app/rag/pipeline.py` — retrieval pipeline that chunks content, retrieves relevant documents, builds prompts, and calls the LLM.
+* `graph/langgraph_agent.py` — LangGraph agent that performs retrieval-augmented reasoning, scoring, and answer generation.
+* `frontend/app.py` — Streamlit UI for ingestion, querying, and answer rendering.
+* Optional observability wiring for Langfuse tracing and Prometheus/Grafana metrics.
 
-The current system persists knowledge across restarts, rebuilds RAG and LangGraph indexes on startup, and uses `Qwen3:8b` as the default Ollama model.
+The current system persists knowledge across restarts, rebuilds indexes from stored documents when needed, and defaults to `Qwen3:8b` for Ollama-backed generation.
 
 ---
 
@@ -58,11 +63,12 @@ The current system persists knowledge across restarts, rebuilds RAG and LangGrap
 
 Backend:
 
-* Python 3.12+
+* Python 3.9+
 
 API:
 
 * FastAPI
+* Pydantic v2 models and settings
 
 AI Framework:
 
@@ -75,35 +81,34 @@ LLM:
 
 Default Models:
 
-* Qwen3:8b (default)
-* configurable via environment variables
+* `Qwen3:8b` as the default local model
+* configurable through environment variables
 * use explicit model selection to avoid unsupported defaults
 
 Embeddings:
 
-* nomic-embed-text
+* `nomic-embed-text`
 
-Ollama calls should use `stream: False` and handle NDJSON-style responses robustly.
+Ollama calls should use `stream: False` and gracefully parse NDJSON-style responses.
 
 Vector Database:
 
-* Chroma (development)
-* Qdrant (production)
+* ChromaDB for the current local implementation
+* Qdrant remains a valid future production target
 
 Frontend:
 
-* Streamlit (MVP)
-* React (future)
+* Streamlit for the current UI
 
 Configuration:
 
 * Pydantic Settings
-* .env
+* `.env` file-based configuration
 
 Containerization:
 
 * Docker
-* Docker Compose
+* Docker Compose (for local monitoring and service orchestration)
 
 Testing:
 
@@ -111,8 +116,10 @@ Testing:
 
 Observability:
 
-* LangSmith
-* Structured Logging
+* Langfuse tracing (optional, when credentials are configured)
+* Prometheus metrics via `prometheus-fastapi-instrumentator`
+* Grafana dashboards for service monitoring
+* Structured logging
 
 ---
 
@@ -188,6 +195,24 @@ Store metadata:
 * modified_date
 
 Always preserve metadata through the entire pipeline.
+
+---
+
+# Local File Ingestion Rules
+
+Use dedicated loaders to parse files based on extensions.
+
+Supported extensions:
+
+* `.pdf` (via `pypdf`)
+* `.docx`, `.doc` (via `python-docx`)
+* `.txt`, `.md`, `.json` (via standard UTF-8 text read)
+
+Store metadata:
+
+* `file_type`
+* `space_key` (defaults to `"uploaded_files"`)
+* `file_size`
 
 ---
 
@@ -388,33 +413,27 @@ Citations should be generated from metadata.
 
 # API Standards
 
-Required endpoints:
+Required endpoints in the current implementation:
 
-POST /rag/query
-
-POST /agent/langgraph/query
-
-POST /ingest/confluence
-
-GET /documents
-
-GET /documents/{id}
-
-PATCH /documents/{id}
-
-DELETE /documents/{id}
-
-POST /documents/reindex
-
-GET /health
+* `POST /rag/query`
+* `POST /agent/langgraph/query`
+* `POST /ingest/confluence`
+* `POST /ingest/file`
+* `GET /documents/`
+* `GET /documents/{page_id}`
+* `PATCH /documents/{page_id}`
+* `DELETE /documents/{page_id}`
+* `POST /documents/reindex`
+* `GET /health`
+* `GET /metrics`
 
 Use:
 
-* Pydantic Models
-* Validation
-* Proper HTTP status codes
+* Pydantic request/response models
+* validation and explicit HTTP status codes
+* thin route handlers that delegate to services
 
-Prefer async FastAPI endpoints where possible and keep route handlers thin.
+Prefer async FastAPI endpoints where appropriate, but keep the current synchronous service boundaries consistent with the existing implementation.
 
 ---
 
@@ -434,21 +453,21 @@ Never expose stack traces to users.
 
 ---
 
-# Logging Standards
+# Logging and Observability Standards
 
 Implement:
 
-* Structured logging
-* Retrieval logs
-* Tool execution logs
-* Agent execution logs
+* Structured logging for ingestion, retrieval, and agent execution
+* Prometheus metrics for API request and ingestion activity
+* Langfuse traces for LLM and RAG request flows when enabled
+* Grafana-based dashboards for system monitoring
 
 Log levels:
 
-DEBUG
-INFO
-WARNING
-ERROR
+* DEBUG
+* INFO
+* WARNING
+* ERROR
 
 Never log secrets.
 
@@ -479,19 +498,20 @@ Every component requires tests.
 Minimum coverage:
 
 * Services
-* Tools
-* Retrieval
+* Retrieval pipeline
 * API routes
+* LangGraph agent behavior
+* Langfuse integration wrapper
 
 Use pytest.
 
-Mock:
+Mock or patch:
 
-* Ollama
-* Confluence
-* Vector DB
+* Ollama network calls
+* Confluence API client calls
+* vector store interactions where appropriate
 
-Tests must run without external dependencies.
+Tests should run without requiring the full production stack, while still validating the real business flow whenever feasible.
 
 ---
 

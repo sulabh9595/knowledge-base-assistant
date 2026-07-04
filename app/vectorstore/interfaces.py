@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Interface definitions for vector store repositories.
+# Use: Enforces a standard interface for storage engines (like memory or Chroma).
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Smoke tests for the main backend application initialization.
+# Use: Confirms that uvicorn/fastapi app starts and loads config correctly.
+
 from fastapi.testclient import TestClient
 from app.main import app
 

@@ -1,3 +1,7 @@
+# Creator: Sulabh Bansod
+# Description: Service layer wrapping the RAG pipeline.
+# Use: Provides access to RAG document ingestion and query matching functions.
+
 from __future__ import annotations
 
 from typing import Optional
