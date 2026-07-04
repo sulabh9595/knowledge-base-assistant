@@ -3,36 +3,34 @@
 [![GitHub stars](https://img.shields.io/github/stars/sulabh9595/knowledge-base-assistant?style=flat-square)](https://github.com/sulabh9595/knowledge-base-assistant)
 [![GitHub repo size](https://img.shields.io/github/repo-size/sulabh9595/knowledge-base-assistant?style=flat-square)](https://github.com/sulabh9595/knowledge-base-assistant)
 
-A local-first AI knowledge base assistant built with FastAPI, Streamlit, Ollama, Chroma, and LangGraph.
+A local-first AI knowledge base assistant built with FastAPI, Streamlit, Ollama, Chroma, LangChain, LangGraph, and optional observability tooling.
 
-This repository ingests Confluence pages, stores them locally, and serves both RAG and graph-based reasoning APIs for grounded question answering.
+This repository ingests Confluence pages and local files, stores them locally, and serves both RAG and graph-based reasoning APIs for grounded question answering.
 
 Repository: https://github.com/sulabh9595/knowledge-base-assistant
 
 ## Features
 
 - Ingest Confluence spaces into a local knowledge base
-- Persist documents to `memory/documents.json`
-- Reload persisted data on backend startup
-- RAG search via Chroma and Ollama inference
-- LangGraph agent reasoning with graph node citations
-- Streamlit frontend for ingestion and query testing
-- Docker Compose support for local deployment
+- Upload and index local files such as PDF, DOCX, TXT, and Markdown
+- Persist documents locally and rebuild indexes on startup
+- Query the knowledge base through a standard RAG pipeline
+- Use a LangGraph agent for multi-step reasoning and source-grounded answers
+- Browse the app through a Streamlit frontend
+- Capture tracing and metrics with Langfuse, Prometheus, and Grafana
 
 ## Technology stack
 
-- Python 3.12+
+- Python 3.9+
 - FastAPI backend
 - Streamlit frontend
 - Ollama LLM (`Qwen3:8b` default)
 - Nomic embeddings (`nomic-embed-text`)
 - Chroma vector store
-- LangGraph-style knowledge graph reasoning
+- LangChain and LangGraph
+- Langfuse tracing (optional)
+- Prometheus and Grafana monitoring
 - Pytest for automated testing
-
-## Repository description
-
-**Local AI knowledge base assistant with FastAPI, Streamlit, Ollama, RAG, and LangGraph.**
 
 ## Project structure
 
@@ -40,7 +38,7 @@ Repository: https://github.com/sulabh9595/knowledge-base-assistant
 - `graph/` - LangGraph reasoning and knowledge graph logic
 - `frontend/` - Streamlit user interface
 - `memory/` - persisted documents and local memory store
-- `docker/` - Docker Compose and container setup
+- `docker/` - Docker Compose, Prometheus, and Grafana configuration
 - `tests/` - unit and integration tests
 
 ## Quick start
@@ -48,31 +46,29 @@ Repository: https://github.com/sulabh9595/knowledge-base-assistant
 1. Create and activate a virtual environment:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
-python -m pip install -r requirements.txt
+pip install -e .
 ```
 
-2. Copy `.env.example` to `.env` and configure:
+2. Create a `.env` file and configure the required values:
 
 ```bash
-cp .env.example .env
+cat > .env <<'EOF'
+OLLAMA_HOST=http://127.0.0.1:11434
+OLLAMA_MODEL=Qwen3:8b
+EMBEDDING_MODEL=nomic-embed-text
+CONFLUENCE_BASE_URL=https://your-instance.atlassian.net/wiki
+CONFLUENCE_EMAIL=your-email@example.com
+CONFLUENCE_API_TOKEN=your-token
+EOF
 ```
-
-Set values for:
-
-- `OLLAMA_HOST`
-- `OLLAMA_MODEL` (default `Qwen3:8b`)
-- `EMBEDDING_MODEL` (default `nomic-embed-text`)
-- `CONFLUENCE_BASE_URL`
-- `CONFLUENCE_EMAIL`
-- `CONFLUENCE_API_TOKEN`
 
 3. Start the backend:
 
 ```bash
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 4. Start the frontend:
@@ -81,18 +77,20 @@ python -m uvicorn app.main:app --reload
 streamlit run frontend/app.py
 ```
 
-5. Open the UI at `http://localhost:8501`.
+5. Open the UI at `http://localhost:8501` and the API at `http://127.0.0.1:8000/health`.
 
 ## API endpoints
 
 - `GET /health`
+- `GET /metrics`
 - `POST /ingest/confluence`
+- `POST /ingest/file`
 - `POST /rag/query`
 - `POST /agent/langgraph/query`
-- `GET /documents`
-- `GET /documents/{id}`
-- `PATCH /documents/{id}`
-- `DELETE /documents/{id}`
+- `GET /documents/`
+- `GET /documents/{page_id}`
+- `PATCH /documents/{page_id}`
+- `DELETE /documents/{page_id}`
 - `POST /documents/reindex`
 
 ## Example requests
@@ -112,7 +110,6 @@ curl -X POST http://127.0.0.1:8000/rag/query \
   -H 'Content-Type: application/json' \
   -d '{"question":"What is the knowledge base about?","top_k":3}'
 ```
-```
 
 ### LangGraph agent query
 
@@ -121,9 +118,8 @@ curl -X POST http://127.0.0.1:8000/agent/langgraph/query \
   -H 'Content-Type: application/json' \
   -d '{"question":"What are the main topics in the knowledge base?","top_k":3}'
 ```
-```
 
-## Tests
+## Testing
 
 Run the full test suite with:
 
@@ -131,16 +127,12 @@ Run the full test suite with:
 pytest
 ```
 
-## Docker
+## Observability
 
-Launch the backend and frontend locally:
-
-```bash
-docker compose up --build
-```
+If enabled in `.env`, the application can emit Langfuse traces and expose Prometheus metrics. Local monitoring assets are available under `docker/`.
 
 ## Notes
 
 - The backend reloads persisted documents on startup from `memory/documents.json`.
 - The default Ollama model is `Qwen3:8b`.
-- The Streamlit UI is a lightweight test interface for ingestion and queries.
+- The Streamlit UI is a lightweight interface for ingestion and query testing.
