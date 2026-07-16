@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain — How the pieces link together</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0D1117;
+    --panel:#151B26;
+    --panel-2:#1A2130;
+    --line:#2A3244;
+    --copper:#C97C4A;
+    --copper-bright:#E39A6B;
+    --teal:#4FD1C5;
+    --cream:#EDE7DC;
+    --muted:#8A93A6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+
+  .wrap{max-width:1000px; margin:0 auto; padding:0 32px; position:relative;}
+
+  /* ---------- chain spine ---------- */
+  .spine{
+    position:absolute; left:50%; top:0; bottom:0; width:2px;
+    background: repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 14px);
+    transform:translateX(-50%);
+    z-index:0;
+  }
+  .link{
+    width:34px; height:52px;
+    border:5px solid var(--copper);
+    border-radius:50%;
+    position:relative;
+    z-index:2;
+    margin:0 auto;
+    background:var(--ink);
+  }
+  .link.small{width:22px; height:34px; border-width:4px; border-color:var(--teal);}
+
+  /* ---------- hero ---------- */
+  header.hero{
+    padding:90px 32px 70px;
+    text-align:center;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--teal);
+    margin-bottom:22px;
+  }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(42px, 8vw, 84px);
+    line-height:0.98;
+    letter-spacing:-0.01em;
+  }
+  h1.title .accent{ color:var(--copper-bright); font-style:italic; font-weight:500;}
+  .sub{
+    max-width:560px; margin:26px auto 0;
+    color:var(--muted); font-size:17px; line-height:1.6;
+  }
+  .hero-chain-row{
+    display:flex; justify-content:center; gap:10px; margin-top:46px;
+  }
+  .hero-chain-row .link{ animation: sway 3.6s ease-in-out infinite; }
+  .hero-chain-row .link:nth-child(2){ animation-delay:.2s; }
+  .hero-chain-row .link:nth-child(3){ animation-delay:.4s; }
+  .hero-chain-row .link:nth-child(4){ animation-delay:.6s; }
+  .hero-chain-row .link:nth-child(5){ animation-delay:.8s; }
+  @keyframes sway{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+
+  /* ---------- section shell ---------- */
+  section{ position:relative; z-index:1; padding:64px 0; }
+  .section-head{ text-align:center; margin-bottom:44px; }
+  .kicker{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--copper-bright); margin-bottom:10px;
+  }
+  h2{
+    font-family:'Fraunces', serif; font-weight:600;
+    font-size:clamp(28px, 4vw, 40px);
+  }
+  p.lede{ color:var(--muted); max-width:620px; margin:14px auto 0; font-size:15.5px; line-height:1.65;}
+
+  /* ---------- what is section ---------- */
+  .definition-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:38px 40px;
+    max-width:720px; margin:0 auto;
+  }
+  .definition-card p{ font-size:16.5px; line-height:1.75; color:#D8D2C6;}
+  .definition-card strong{ color:var(--cream); font-weight:600;}
+  .analogy{
+    margin-top:22px; padding-top:22px; border-top:1px dashed var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--teal); line-height:1.7;
+  }
+
+  /* ---------- building blocks grid ---------- */
+  .blocks{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+  }
+  .block{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px 22px;
+    position:relative;
+    transition:transform .25s ease, border-color .25s ease;
+  }
+  .block:hover{ transform:translateY(-4px); border-color:var(--copper); }
+  .block .num{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--muted); letter-spacing:.1em;
+  }
+  .block h3{
+    font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin:10px 0 8px;
+    color:var(--copper-bright);
+  }
+  .block p{ font-size:13.6px; color:var(--muted); line-height:1.55; }
+  @media (max-width:760px){ .blocks{grid-template-columns:1fr 1fr;} }
+  @media (max-width:520px){ .blocks{grid-template-columns:1fr;} }
+
+  /* ---------- RAG pipeline ---------- */
+  .pipeline{
+    display:flex; align-items:center; justify-content:center; gap:0;
+    flex-wrap:wrap; margin-top:10px;
+  }
+  .stage{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 16px;
+    width:150px;
+    text-align:center;
+  }
+  .stage .icon{ font-size:22px; margin-bottom:8px; display:block;}
+  .stage h4{ font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:.04em; color:var(--cream); text-transform:uppercase;}
+  .stage p{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .arrow{ color:var(--copper); font-size:20px; padding:0 10px; align-self:center; }
+  @media (max-width:760px){
+    .pipeline{ flex-direction:column; }
+    .arrow{ transform:rotate(90deg); padding:6px 0; }
+  }
+
+  /* ---------- ecosystem ---------- */
+  .eco-row{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+  }
+  .eco-card{
+    border:1px solid var(--line); border-radius:14px; padding:26px 22px;
+    background:linear-gradient(160deg, var(--panel) 0%, var(--panel-2) 100%);
+  }
+  .eco-card .tag{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+    color:var(--ink); background:var(--teal); padding:3px 9px; border-radius:20px; letter-spacing:.05em;
+    margin-bottom:12px; font-weight:600;
+  }
+  .eco-card h3{ font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin-bottom:8px;}
+  .eco-card p{ font-size:13.5px; color:var(--muted); line-height:1.6;}
+  @media (max-width:760px){ .eco-row{grid-template-columns:1fr;} }
+
+  /* ---------- why / closing ---------- */
+  .closing{
+    text-align:center; padding:80px 32px 100px;
+  }
+  .closing h2{ margin-bottom:18px; }
+  .closing p.lede{ margin-bottom:34px; }
+  .closing-links{
+    display:flex; justify-content:center; gap:8px; margin-bottom:26px;
+  }
+  .footnote{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--muted);
+  }
+
+  .divider-wrap{ display:flex; justify-content:center; padding:10px 0 30px; }
+
+  /* ---------- code / commands ---------- */
+  .code-grid{ display:flex; flex-direction:column; gap:16px; }
+  .code-card{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .code-card .cc-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .code-card .cc-head h4{
+    font-family:'Fraunces', serif; font-weight:600; font-size:16px; color:var(--cream);
+  }
+  .code-card .cc-head span{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--copper-bright); background:rgba(201,124,74,0.12);
+    padding:3px 9px; border-radius:20px; border:1px solid rgba(201,124,74,0.35);
+  }
+  .code-card pre{
+    margin:0; padding:18px 20px; overflow-x:auto;
+    font-family:'JetBrains Mono', monospace; font-size:12.6px; line-height:1.7;
+    color:#D8DEE9;
+  }
+  .code-card pre .c-kw{ color:var(--teal); }
+  .code-card pre .c-str{ color:var(--copper-bright); }
+  .code-card pre .c-com{ color:var(--muted); font-style:italic; }
+  .code-note{ font-size:12.5px; color:var(--muted); padding:0 20px 16px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="spine" aria-hidden="true"></div>
+
+  <header class="hero">
+    <div class="eyebrow">Framework Primer</div>
+    <h1 class="title">Lang<span class="accent">Chain</span></h1>
+    <p class="sub">An open-source framework for building applications powered by language models — by linking prompts, models, memory, tools, and data into a single working chain.</p>
+    <div class="hero-chain-row" aria-hidden="true">
+      <div class="link"></div><div class="link"></div><div class="link"></div><div class="link"></div><div class="link"></div>
+    </div>
+  </header>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section id="what">
+    <div class="section-head">
+      <div class="kicker">01 — The Idea</div>
+      <h2>Why "chain"?</h2>
+      <p class="lede">An LLM on its own just predicts text. LangChain gives it a body: a way to pull in outside data, remember past turns, call tools, and hand off decisions to other steps.</p>
+    </div>
+    <div class="definition-card">
+      <p><strong>LangChain</strong> is a Python/JS framework that standardizes how you connect an LLM to everything around it — prompts, documents, APIs, databases, and other models — so you can compose them into a <strong>chain</strong> of steps instead of writing glue code from scratch each time.</p>
+      <div class="analogy">think: LLM = engine · LangChain = the drivetrain, wiring, and dashboard around it</div>
+    </div>
+  </section>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section id="blocks">
+    <div class="section-head">
+      <div class="kicker">02 — Core Components</div>
+      <h2>Six links in the chain</h2>
+      <p class="lede">Every LangChain app is assembled from some combination of these building blocks.</p>
+    </div>
+    <div class="blocks">
+      <div class="block">
+        <span class="num">01</span>
+        <h3>Models</h3>
+        <p>Wrappers around LLMs (GPT, Claude, Gemini, Ollama-hosted local models) behind one consistent interface.</p>
+      </div>
+      <div class="block">
+        <span class="num">02</span>
+        <h3>Prompts</h3>
+        <p>Templates that structure instructions, few-shot examples, and variables fed into the model.</p>
+      </div>
+      <div class="block">
+        <span class="num">03</span>
+        <h3>Chains</h3>
+        <p>Sequences of calls — model, tool, parser — composed into a single reusable pipeline (LCEL).</p>
+      </div>
+      <div class="block">
+        <span class="num">04</span>
+        <h3>Memory</h3>
+        <p>Carries conversation history or state across turns, so the app doesn't forget context.</p>
+      </div>
+      <div class="block">
+        <span class="num">05</span>
+        <h3>Retrievers</h3>
+        <p>Fetch relevant chunks from vector stores or documents — the backbone of RAG.</p>
+      </div>
+      <div class="block">
+        <span class="num">06</span>
+        <h3>Agents & Tools</h3>
+        <p>Let the model decide which tool to call next — search, code, an API — rather than following a fixed path.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section id="rag">
+    <div class="section-head">
+      <div class="kicker">03 — In Practice</div>
+      <h2>The RAG pipeline</h2>
+      <p class="lede">The most common LangChain pattern: ground the model's answer in your own documents.</p>
+    </div>
+    <div class="pipeline">
+      <div class="stage"><span class="icon">📄</span><h4>Load</h4><p>Ingest docs, PDFs, pages</p></div>
+      <div class="arrow">→</div>
+      <div class="stage"><span class="icon">✂️</span><h4>Split</h4><p>Chunk into passages</p></div>
+      <div class="arrow">→</div>
+      <div class="stage"><span class="icon">🧭</span><h4>Embed</h4><p>Vectorize each chunk</p></div>
+      <div class="arrow">→</div>
+      <div class="stage"><span class="icon">🔍</span><h4>Retrieve</h4><p>Pull top matches for a query</p></div>
+      <div class="arrow">→</div>
+      <div class="stage"><span class="icon">🧩</span><h4>Generate</h4><p>LLM answers using retrieved context</p></div>
+    </div>
+  </section>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section id="commands">
+    <div class="section-head">
+      <div class="kicker">04 — Getting Hands-On</div>
+      <h2>Basic commands & methods</h2>
+      <p class="lede">The install command plus the handful of methods you'll reach for in almost every LangChain script.</p>
+    </div>
+    <div class="code-grid">
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Install</h4><span>Setup</span></div>
+        <pre><span class="c-com"># core + a model provider + a vector store</span>
+pip install langchain langchain-openai langchain-community faiss-cpu</pre>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Initialize a model</h4><span>Models</span></div>
+        <pre><span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> ChatOpenAI
+
+llm = ChatOpenAI(model=<span class="c-str">"gpt-4o-mini"</span>, temperature=<span class="c-str">0</span>)
+response = llm.invoke(<span class="c-str">"Summarize LangChain in one line"</span>)
+<span class="c-kw">print</span>(response.content)</pre>
+        <div class="code-note"><strong style="color:var(--cream)">.invoke()</strong> runs once and returns the full result — every runnable in LangChain (models, chains, retrievers) shares this same method.</div>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Prompt template</h4><span>Prompts</span></div>
+        <pre><span class="c-kw">from</span> langchain_core.prompts <span class="c-kw">import</span> ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_template(
+    <span class="c-str">"Explain {topic} to a {audience}."</span>
+)</pre>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Build a chain (LCEL)</h4><span>Chains</span></div>
+        <pre><span class="c-kw">from</span> langchain_core.output_parsers <span class="c-kw">import</span> StrOutputParser
+
+chain = prompt | llm | StrOutputParser()
+result = chain.invoke({<span class="c-str">"topic"</span>: <span class="c-str">"RAG"</span>, <span class="c-str">"audience"</span>: <span class="c-str">"QA engineer"</span>})</pre>
+        <div class="code-note">The <strong style="color:var(--cream)">|</strong> pipe operator is LCEL (LangChain Expression Language) — it links runnables into a chain, left to right.</div>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Retriever / RAG lookup</h4><span>Retrievers</span></div>
+        <pre><span class="c-kw">from</span> langchain_community.vectorstores <span class="c-kw">import</span> FAISS
+<span class="c-kw">from</span> langchain_openai <span class="c-kw">import</span> OpenAIEmbeddings
+
+store = FAISS.from_documents(docs, OpenAIEmbeddings())
+retriever = store.as_retriever(search_kwargs={<span class="c-str">"k"</span>: <span class="c-str">4</span>})
+matches = retriever.invoke(<span class="c-str">"self-healing locators"</span>)</pre>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Add memory</h4><span>Memory</span></div>
+        <pre><span class="c-kw">from</span> langchain_core.chat_history <span class="c-kw">import</span> InMemoryChatMessageHistory
+<span class="c-kw">from</span> langchain_core.runnables.history <span class="c-kw">import</span> RunnableWithMessageHistory
+
+chat_with_memory = RunnableWithMessageHistory(
+    chain, <span class="c-kw">lambda</span> session_id: InMemoryChatMessageHistory()
+)</pre>
+      </div>
+
+      <div class="code-card">
+        <div class="cc-head"><h4>Agent with tools</h4><span>Agents</span></div>
+        <pre><span class="c-kw">from</span> langchain.agents <span class="c-kw">import</span> create_tool_calling_agent, AgentExecutor
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+executor.invoke({<span class="c-str">"input"</span>: <span class="c-str">"Run the failed test and diagnose it"</span>})</pre>
+        <div class="code-note">Common methods across all of these: <strong style="color:var(--cream)">.invoke()</strong> · <strong style="color:var(--cream)">.stream()</strong> (token-by-token) · <strong style="color:var(--cream)">.batch()</strong> (many inputs at once).</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section id="eco">
+    <div class="section-head">
+      <div class="kicker">05 — The Ecosystem</div>
+      <h2>Beyond the core library</h2>
+      <p class="lede">LangChain has grown into a family of tools for different stages of building and running an LLM app.</p>
+    </div>
+    <div class="eco-row">
+      <div class="eco-card">
+        <span class="tag">Orchestration</span>
+        <h3>LangGraph</h3>
+        <p>Graph-based framework for multi-agent, stateful workflows — branching logic, loops, and human-in-the-loop steps that a linear chain can't express.</p>
+      </div>
+      <div class="eco-card">
+        <span class="tag">Observability</span>
+        <h3>LangSmith</h3>
+        <p>Traces, debugs, and evaluates chains and agents in production — see exactly what prompt and context produced each output.</p>
+      </div>
+      <div class="eco-card">
+        <span class="tag">Deployment</span>
+        <h3>LangServe</h3>
+        <p>Turns a LangChain pipeline into a REST API in a few lines, ready to call from any client app.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-wrap"><div class="link small"></div></div>
+
+  <section class="closing">
+    <div class="kicker" style="margin-bottom:14px;">06 — Why It Matters</div>
+    <h2>One interface, many moving parts</h2>
+    <p class="lede">Instead of hand-rolling integrations for every model, vector store, and API, LangChain gives teams a common set of abstractions — which is exactly why it shows up so often in agentic-AI and test-automation tooling today, from self-healing locators to multi-agent QA pipelines.</p>
+    <div class="closing-links" aria-hidden="true">
+      <div class="link small"></div><div class="link small"></div><div class="link small"></div>
+    </div>
+    <div class="footnote">github.com/langchain-ai/langchain</div>
+  </section>
+
+</div>
+</body>
+</html>
