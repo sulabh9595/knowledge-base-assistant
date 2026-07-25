@@ -43,7 +43,7 @@ def get_json(path: str) -> dict:
 st.title("Knowledge Base Assistant")
 st.markdown("A simple Streamlit UI for document ingestion, RAG querying, and LangGraph agent reasoning.")
 
-tabs = st.tabs(["Health", "Document Ingestion", "RAG Query", "LangGraph Agent"])
+tabs = st.tabs(["Health", "Document & Audio Ingestion", "RAG Query", "LangGraph Agent"])
 
 with tabs[0]:
     st.header("Service Health")
@@ -56,7 +56,7 @@ with tabs[0]:
             st.error(f"Health check failed: {exc}")
 
 with tabs[1]:
-    st.header("Document Ingestion")
+    st.header("Document & Audio Ingestion")
 
     ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload", "Audio Recording / Meeting Ingestion"])
 
@@ -130,7 +130,7 @@ with tabs[1]:
 
 with tabs[2]:
     st.header("RAG Query")
-    query_mode = st.radio("Select Query Mode", ["Text Question", "Voice / Audio Question"], horizontal=True)
+    query_mode = st.radio("Select Query Mode", ["Text Question", "Voice / Audio Question"], horizontal=True, key="rag_query_mode")
 
     if query_mode == "Text Question":
         question = st.text_area("Question", key="rag_question")
@@ -153,7 +153,7 @@ with tabs[2]:
         st.subheader("🎤 Voice Question")
         audio_prompt = None
         if hasattr(st, "audio_input"):
-            audio_prompt = st.audio_input("Record your voice question")
+            audio_prompt = st.audio_input("Record your voice question", key="rag_audio_input")
         
         audio_file = st.file_uploader("Or upload an audio query file (.wav, .mp3, .m4a)", type=["wav", "mp3", "m4a", "ogg", "flac"], key="rag_audio_file")
         top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3, key="rag_audio_top_k")
@@ -177,21 +177,50 @@ with tabs[2]:
 
 with tabs[3]:
     st.header("LangGraph Agent Query")
-    question = st.text_area("Question", key="langgraph_question")
-    top_k = st.slider("Top K nodes", min_value=1, max_value=10, value=3, key="langgraph_top_k")
-    if st.button("Query LangGraph Agent"):
-        if not question.strip():
-            st.warning("Enter a question to query the LangGraph agent.")
-        else:
-            try:
-                result = post_json(
-                    "/agent/langgraph/query",
-                    {"question": question, "top_k": top_k},
-                )
-                st.success("LangGraph answer generated")
-                st.subheader("Answer")
-                st.write(result.get("answer", ""))
-                st.subheader("Graph Nodes")
-                st.json(result.get("nodes", []))
-            except httpx.HTTPError as exc:
-                st.error(f"LangGraph query failed: {exc}")
+    langgraph_query_mode = st.radio("Select Query Mode", ["Text Question", "Voice / Audio Question"], horizontal=True, key="langgraph_query_mode")
+
+    if langgraph_query_mode == "Text Question":
+        question = st.text_area("Question", key="langgraph_question")
+        top_k = st.slider("Top K nodes", min_value=1, max_value=10, value=3, key="langgraph_top_k")
+        if st.button("Query LangGraph Agent"):
+            if not question.strip():
+                st.warning("Enter a question to query the LangGraph agent.")
+            else:
+                try:
+                    result = post_json(
+                        "/agent/langgraph/query",
+                        {"question": question, "top_k": top_k},
+                    )
+                    st.success("LangGraph answer generated")
+                    st.subheader("Answer")
+                    st.write(result.get("answer", ""))
+                    st.subheader("Graph Nodes")
+                    st.json(result.get("nodes", []))
+                except httpx.HTTPError as exc:
+                    st.error(f"LangGraph query failed: {exc}")
+
+    else:
+        st.subheader("🎤 Voice Question (LangGraph Agent)")
+        lg_audio_prompt = None
+        if hasattr(st, "audio_input"):
+            lg_audio_prompt = st.audio_input("Record your voice question", key="langgraph_audio_input")
+        
+        lg_audio_file = st.file_uploader("Or upload an audio query file (.wav, .mp3, .m4a)", type=["wav", "mp3", "m4a", "ogg", "flac"], key="langgraph_audio_file")
+        top_k = st.slider("Top K nodes", min_value=1, max_value=10, value=3, key="langgraph_audio_top_k")
+
+        selected_lg_audio = lg_audio_prompt or lg_audio_file
+
+        if selected_lg_audio:
+            st.audio(selected_lg_audio)
+            if st.button("Submit Voice Query to Agent"):
+                try:
+                    files = {"file": (getattr(selected_lg_audio, "name", "voice_query.wav"), selected_lg_audio.getvalue(), "audio/wav")}
+                    result = post_file(f"/agent/langgraph/query/audio?top_k={top_k}", files)
+                    st.info(f"Transcribed Question: **{result.get('transcribed_question')}**")
+                    st.success("LangGraph Answer Generated")
+                    st.subheader("Answer")
+                    st.markdown(result.get("answer", ""))
+                    st.subheader("Retrieved Documents & Nodes")
+                    st.json(result.get("retrieved_documents", []))
+                except httpx.HTTPError as exc:
+                    st.error(f"Voice LangGraph query failed: {exc}")
