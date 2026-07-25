@@ -113,3 +113,78 @@ async def ingest_file(file: UploadFile = File(...)):
     except Exception as exc:
         INGESTION_FAILURES.labels(source="file_upload").inc()
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/audio")
+async def ingest_audio(
+    file: UploadFile = File(...),
+    generate_summary: bool = True
+):
+    """Dedicated 100% local endpoint for ingesting audio recordings with executive summary generation."""
+    filename = file.filename or "recording.wav"
+    _, ext = os.path.splitext(filename.lower())
+
+    if ext not in AUDIO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported audio file format: {ext}")
+
+    try:
+        content_bytes = await file.read()
+        audio_data = FileLoader.read_audio(content_bytes, filename=filename)
+        text = audio_data.get("text", "").strip()
+
+        if not text:
+            raise HTTPException(status_code=400, detail="The uploaded audio file produced no transcription text.")
+
+        summary = ""
+        if generate_summary:
+            try:
+                from app.services.llm_service import OllamaService
+                llm = OllamaService()
+                prompt = f"Provide a concise executive summary and key action points for this meeting transcript:\n\n{text[:3000]}"
+                summary = llm.generate(prompt)
+            except Exception:
+                summary = ""
+
+        page_id = f"audio_{uuid.uuid4().hex[:12]}"
+        full_document_text = f"Summary:\n{summary}\n\nFull Transcript:\n{text}" if summary else text
+
+        document = {
+            "page_id": page_id,
+            "title": filename,
+            "source_url": f"file://uploaded/audio/{filename}",
+            "text": full_document_text,
+            "metadata": {
+                "file_type": ext,
+                "space_key": "uploaded_audio",
+                "file_size": len(content_bytes),
+                "media_type": "audio",
+                "duration_seconds": audio_data.get("duration", 0.0),
+                "language": audio_data.get("language", "en"),
+                "segment_count": len(audio_data.get("segments", [])),
+                "has_summary": bool(summary),
+            }
+        }
+
+        document_service.save_documents([document])
+        rag_service.ingest_documents([document])
+        langgraph_service.ingest_documents([document])
+
+        DOCUMENTS_INGESTED.labels(source="audio_upload").inc()
+
+        return {
+            "status": "success",
+            "page_id": page_id,
+            "title": filename,
+            "duration_seconds": audio_data.get("duration", 0.0),
+            "language": audio_data.get("language", "en"),
+            "word_count": len(text.split()),
+            "summary": summary
+        }
+
+    except HTTPException:
+        INGESTION_FAILURES.labels(source="audio_upload").inc()
+        raise
+    except Exception as exc:
+        INGESTION_FAILURES.labels(source="audio_upload").inc()
+        raise HTTPException(status_code=500, detail=str(exc))
+

@@ -60,3 +60,32 @@ def test_rag_audio_query_endpoint(mock_rag_query, mock_transcribe):
     assert data["transcribed_question"] == "What is the project architecture?"
     assert data["answer"] == "The project uses FastAPI and ChromaDB."
     assert len(data["retrieved_documents"]) == 1
+
+
+@patch("app.loaders.file_loader.FileLoader.read_audio")
+@patch("app.services.document_service.document_service.save_documents")
+@patch("app.services.rag_service.rag_service.ingest_documents")
+@patch("app.services.langgraph_agent_service.langgraph_service.ingest_documents")
+@patch("app.services.llm_service.OllamaService.generate")
+def test_dedicated_audio_ingest_endpoint(mock_llm_gen, mock_langgraph_ingest, mock_rag_ingest, mock_save_docs, mock_read_audio):
+    mock_read_audio.return_value = {
+        "text": "Discussion on Q4 strategic goals and infrastructure roadmap.",
+        "language": "en",
+        "duration": 45.0,
+        "segments": [{"start": 0.0, "end": 45.0, "text": "Discussion on Q4 strategic goals and infrastructure roadmap."}]
+    }
+    mock_llm_gen.return_value = "Executive Summary: Q4 infrastructure alignment."
+
+    file_content = b"fake wav audio binary"
+    response = client.post(
+        "/ingest/audio?generate_summary=true",
+        files={"file": ("q4_strategy.wav", file_content, "audio/wav")}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["title"] == "q4_strategy.wav"
+    assert data["duration_seconds"] == 45.0
+    assert "Executive Summary" in data["summary"]
+
