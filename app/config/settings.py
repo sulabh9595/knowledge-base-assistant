@@ -30,6 +30,8 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("LANGFUSE_HOST", "LANGFUSE_BASE_URL"),
     )
     confident_api_key: str = ""
+    stt_model_size: str = "base"
+    stt_device: str = "cpu"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

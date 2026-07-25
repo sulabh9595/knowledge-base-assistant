@@ -46,6 +46,9 @@ def ingest_confluence(request: ConfluenceIngestRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".flac"}
+
+
 @router.post("/file", response_model=FileIngestResponse)
 async def ingest_file(file: UploadFile = File(...)):
     filename = file.filename or "unknown"
@@ -53,6 +56,8 @@ async def ingest_file(file: UploadFile = File(...)):
 
     try:
         content_bytes = await file.read()
+        duration = 0.0
+        language = "en"
 
         if ext in (".txt", ".md", ".json"):
             text = FileLoader.read_text(content_bytes)
@@ -60,6 +65,11 @@ async def ingest_file(file: UploadFile = File(...)):
             text = FileLoader.read_pdf(content_bytes)
         elif ext in (".docx", ".doc"):
             text = FileLoader.read_docx(content_bytes)
+        elif ext in AUDIO_EXTENSIONS:
+            audio_data = FileLoader.read_audio(content_bytes, filename=filename)
+            text = audio_data.get("text", "")
+            duration = audio_data.get("duration", 0.0)
+            language = audio_data.get("language", "en")
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
 
@@ -76,6 +86,9 @@ async def ingest_file(file: UploadFile = File(...)):
                 "file_type": ext,
                 "space_key": "uploaded_files",
                 "file_size": len(content_bytes),
+                "media_type": "audio" if ext in AUDIO_EXTENSIONS else "document",
+                "duration_seconds": duration,
+                "language": language,
             }
         }
 

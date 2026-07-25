@@ -82,8 +82,8 @@ with tabs[1]:
 
     elif ingest_type == "Local File Upload":
         uploaded_file = st.file_uploader(
-            "Choose a PDF, Word, or Text file",
-            type=["pdf", "docx", "txt", "md"]
+            "Choose a PDF, Word, Text, or Audio file",
+            type=["pdf", "docx", "txt", "md", "mp3", "wav", "m4a", "ogg", "flac"]
         )
         if st.button("Upload and Ingest File"):
             if not uploaded_file:
@@ -100,21 +100,50 @@ with tabs[1]:
 
 with tabs[2]:
     st.header("RAG Query")
-    question = st.text_area("Question", key="rag_question")
-    top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3)
-    if st.button("Query RAG"):
-        if not question.strip():
-            st.warning("Enter a question to query the RAG endpoint.")
-        else:
-            try:
-                result = post_json("/rag/query", {"question": question, "top_k": top_k})
-                st.success("RAG answer generated")
-                st.subheader("Answer")
-                st.markdown(result.get("answer", ""))
-                st.subheader("Retrieved Documents")
-                st.json(result.get("retrieved_documents", []))
-            except httpx.HTTPError as exc:
-                st.error(f"RAG query failed: {exc}")
+    query_mode = st.radio("Select Query Mode", ["Text Question", "Voice / Audio Question"], horizontal=True)
+
+    if query_mode == "Text Question":
+        question = st.text_area("Question", key="rag_question")
+        top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3)
+        if st.button("Query RAG"):
+            if not question.strip():
+                st.warning("Enter a question to query the RAG endpoint.")
+            else:
+                try:
+                    result = post_json("/rag/query", {"question": question, "top_k": top_k})
+                    st.success("RAG answer generated")
+                    st.subheader("Answer")
+                    st.markdown(result.get("answer", ""))
+                    st.subheader("Retrieved Documents")
+                    st.json(result.get("retrieved_documents", []))
+                except httpx.HTTPError as exc:
+                    st.error(f"RAG query failed: {exc}")
+
+    else:
+        st.subheader("🎤 Voice Question")
+        audio_prompt = None
+        if hasattr(st, "audio_input"):
+            audio_prompt = st.audio_input("Record your voice question")
+        
+        audio_file = st.file_uploader("Or upload an audio query file (.wav, .mp3, .m4a)", type=["wav", "mp3", "m4a", "ogg", "flac"], key="rag_audio_file")
+        top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3, key="rag_audio_top_k")
+
+        selected_audio = audio_prompt or audio_file
+
+        if selected_audio:
+            st.audio(selected_audio)
+            if st.button("Submit Voice Query"):
+                try:
+                    files = {"file": (getattr(selected_audio, "name", "voice_query.wav"), selected_audio.getvalue(), "audio/wav")}
+                    result = post_file(f"/rag/query/audio?top_k={top_k}", files)
+                    st.info(f"Transcribed Question: **{result.get('transcribed_question')}**")
+                    st.success("RAG Answer Generated")
+                    st.subheader("Answer")
+                    st.markdown(result.get("answer", ""))
+                    st.subheader("Retrieved Documents")
+                    st.json(result.get("retrieved_documents", []))
+                except httpx.HTTPError as exc:
+                    st.error(f"Voice RAG query failed: {exc}")
 
 with tabs[3]:
     st.header("LangGraph Agent Query")

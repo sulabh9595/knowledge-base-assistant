@@ -20,7 +20,9 @@ dependencies = [
   "langchain-chroma>=0.2.6",
   "chromadb>=0.4.0",
   "langfuse>=2.0.0",
-  "deepeval>=2.0.0"
+  "deepeval>=2.0.0",
+  "faster-whisper>=1.0.0",
+  "pydub>=0.25.1"
 ]
 
 [project.scripts]

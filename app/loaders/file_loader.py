@@ -33,3 +33,10 @@ class FileLoader:
         doc = DocxDocument(docx_file)
         text_parts = [p.text for p in doc.paragraphs if p.text]
         return "\n".join(text_parts).strip()
+
+    @staticmethod
+    def read_audio(file_bytes: bytes, filename: str = "audio.wav") -> dict:
+        """Extract plain text transcription and metadata from audio file bytes."""
+        from app.services.stt_service import stt_service
+        return stt_service.transcribe_bytes(file_bytes, filename=filename)
+

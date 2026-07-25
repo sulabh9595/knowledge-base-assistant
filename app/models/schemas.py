@@ -107,3 +107,11 @@ class FileIngestResponse(BaseModel):
     title: str
     word_count: int
 
+
+class AudioQueryResponse(BaseModel):
+    transcribed_question: str
+    audio_language: str
+    answer: str
+    retrieved_documents: list[dict[str, Any]]
+
+
