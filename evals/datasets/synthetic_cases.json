@@ -48,5 +48,15 @@
       "source": "Explore Confluence Features",
       "generation_method": "synthetic-safety"
     }
+  },
+  {
+    "input": "What key decisions were recorded in the team sync meeting audio recording?",
+    "expected_output": "The team decided to implement audio ingestion and voice query APIs using faster-whisper.",
+    "query_type": "factual",
+    "metadata": {
+      "difficulty": "medium",
+      "source": "team_sync_recording.mp3",
+      "generation_method": "synthetic-audio-transcript"
+    }
   }
 ]
