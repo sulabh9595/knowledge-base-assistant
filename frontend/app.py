@@ -58,7 +58,7 @@ with tabs[0]:
 with tabs[1]:
     st.header("Document Ingestion")
 
-    ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload"])
+    ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload", "Audio Recording / Meeting Ingestion"])
 
     if ingest_type == "Confluence Space":
         space_key = st.text_input("Space Key", key="confluence_space_key")
@@ -96,6 +96,36 @@ with tabs[1]:
                     st.json(result)
                 except httpx.HTTPError as exc:
                     st.error(f"File ingestion failed: {exc}")
+
+    elif ingest_type == "Audio Recording / Meeting Ingestion":
+        st.subheader("🎙️ Local Audio Recording Ingestion")
+        audio_file = st.file_uploader(
+            "Upload Meeting Audio / Voice Note (.mp3, .wav, .m4a, .ogg, .flac)",
+            type=["mp3", "wav", "m4a", "ogg", "flac", "aac"],
+            key="ingest_audio_file"
+        )
+        gen_summary = st.checkbox("Generate Local Executive Summary & Action Items (Qwen3:8b)", value=True)
+
+        if audio_file:
+            st.audio(audio_file)
+            if st.button("Transcribe & Ingest Audio"):
+                try:
+                    files = {"file": (audio_file.name, audio_file.getvalue(), audio_file.type or "audio/wav")}
+                    path = f"/ingest/audio?generate_summary={str(gen_summary).lower()}"
+                    result = post_file(path, files)
+                    st.success(f"Successfully transcribed and ingested '{result.get('title')}'!")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Duration", f"{result.get('duration_seconds')}s")
+                    col2.metric("Language", result.get('language', 'en').upper())
+                    col3.metric("Word Count", result.get('word_count'))
+
+                    if result.get("summary"):
+                        st.subheader("Executive Summary")
+                        st.markdown(result.get("summary"))
+                    st.subheader("Ingestion Details")
+                    st.json(result)
+                except httpx.HTTPError as exc:
+                    st.error(f"Audio ingestion failed: {exc}")
 
 
 with tabs[2]:
