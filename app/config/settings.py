@@ -29,8 +29,10 @@ class Settings(BaseSettings):
         default="https://cloud.langfuse.com",
         validation_alias=AliasChoices("LANGFUSE_HOST", "LANGFUSE_BASE_URL"),
     )
+    confident_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
+

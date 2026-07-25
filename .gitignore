@@ -26,3 +26,11 @@ dist/
 
 # Pytest
 .pytest_cache/
+
+# Internal CLI & Tool artifacts
+.antigravitycli/
+.deepeval/
+.skills/
+
+# MCP servers (machine-specific paths)
+/.mcp.json

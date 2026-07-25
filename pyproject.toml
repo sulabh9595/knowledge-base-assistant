@@ -1,7 +1,7 @@
 [project]
-name = "knowledge-base-app"
+name = "enterprise-agentic-knowledge-platform"
 version = "0.1.0"
-description = "Local-first AI knowledge base assistant"
+description = "Enterprise Agentic Knowledge Platform with DeepEval benchmarking & LangGraph RAG"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
@@ -19,7 +19,8 @@ dependencies = [
   "langchain-ollama>=0.3.10",
   "langchain-chroma>=0.2.6",
   "chromadb>=0.4.0",
-  "langfuse>=2.0.0"
+  "langfuse>=2.0.0",
+  "deepeval>=2.0.0"
 ]
 
 [project.scripts]

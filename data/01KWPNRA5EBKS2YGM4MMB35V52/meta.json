@@ -1,0 +1,18 @@
+{
+	"ulid": "01KWPNRA5EBKS2YGM4MMB35V52",
+	"minTime": 1783160949503,
+	"maxTime": 1783166400000,
+	"stats": {
+		"numSamples": 14932,
+		"numFloatSamples": 14932,
+		"numSeries": 159,
+		"numChunks": 268
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01KWPNRA5EBKS2YGM4MMB35V52"
+		]
+	},
+	"version": 1
+}

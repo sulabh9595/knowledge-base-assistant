@@ -1,0 +1,2 @@
+run_id,timestamp,target,dataset,total_cases,passed_cases,pass_rate,avg_faithfulness,avg_answer_relevancy,avg_contextual_precision,avg_contextual_recall,avg_hallucination,avg_toxicity,avg_bias,avg_refusal_quality,avg_citation_quality,duration_seconds
+run_rag_synthetic_2026-07-17_234423,2026-07-17T18:14:23.468184,rag,synthetic,5,0,0.0,0.5482,0.7542,1.0,0.6486,0.4518,0.0,0.027,0.6,1.0,90.11
