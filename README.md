@@ -7,24 +7,33 @@
 [![LangChain](https://img.shields.io/badge/LangChain-Enabled-1C3C3C?style=flat-square)](https://www.langchain.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, and **DeepEval**.
+A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, **faster-whisper**, and **DeepEval**.
 
-This application ingests Confluence spaces and local files (PDF, DOCX, TXT, Markdown), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs. It features an integrated **DeepEval evaluation harness** and **synthetic dataset generator** for continuous benchmarking of answer accuracy, context relevancy, hallucination rate, and safety.
+This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT`, `Markdown`), and local audio recordings (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs (with full text and voice question capabilities). It features an integrated **DeepEval evaluation harness**, **synthetic dataset generator**, and interactive **Streamlit evaluation dashboard** for continuous benchmarking of answer accuracy, context relevancy, hallucination rate, and safety.
 
 ---
 
 ## 🌟 Key Features
 
-* **📥 Multi-Source Document Ingestion**: Ingest live Confluence spaces via Atlassian APIs or upload local files (`PDF`, `DOCX`, `TXT`, `Markdown`).
+* **📥 Multi-Source Document & Audio Ingestion**:
+  * Ingest live Confluence spaces via Atlassian APIs.
+  * Ingest local documents (`PDF`, `DOCX`, `TXT`, `Markdown`).
+  * Ingest local meeting recordings and voice notes (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`) using 100% offline Speech-to-Text (`faster-whisper`).
+  * Dedicated `/ingest/audio` endpoint with automatic LLM executive summaries and action items (`Qwen3:8b`).
+* **🎤 Voice Query & RAG Engine**:
+  * Submit text or voice queries to RAG (`POST /rag/query/audio`) and LangGraph Agent (`POST /agent/langgraph/query/audio`).
+  * Native microphone recording (`st.audio_input`) and audio query file upload in the Streamlit frontend.
 * **🧠 Dual Retrieval & Reasoning Engines**:
   * **RAG Pipeline**: Vector similarity retrieval with Chroma vector store and grounded response generation.
   * **LangGraph Agent**: Multi-step graph-based reasoning and document relationship mapping.
-* **📊 DeepEval Evaluation Framework**:
-  * **Synthetic Dataset Generator**: Automatically create factual, unsupported, and safety test cases from indexed documents using local LLMs.
+* **📁 Bulk Audio Ingestion CLI Utility**:
+  * Bulk process and index entire local directories of meeting recordings offline using `scripts/ingest_audio_dir.py`.
+* **📊 DeepEval Evaluation Framework & Interactive Dashboard**:
+  * **Synthetic Dataset Generator**: Automatically create factual, unsupported, audio transcript, and safety test cases from indexed documents using local LLMs.
   * **Multi-Metric Evaluation Harness**: Quantitative scoring for Faithfulness, Answer Relevancy, Contextual Precision/Recall, Hallucination, Toxicity, Bias, Refusal Quality, and Citation Quality.
-  * **Automated Reporting**: Exports test run summaries, JSON reports (`latest.json`), and historical time-series metrics (`metrics.csv`).
+  * **Interactive Dashboard**: Track metrics trends over time, compare historical runs, and analyze individual test cases via `frontend/eval_dashboard.py` (`scripts/run_eval_dashboard.sh`).
 * **📡 Observability & Tracing**: Native Langfuse trace logging, custom Prometheus metrics at `/metrics`, and ready-to-use Grafana monitoring dashboards.
-* **🖥️ Interactive UI**: Modern Streamlit web interface for document uploads, interactive queries, and health checks.
+* **🖥️ Interactive UI**: Modern Streamlit web interface with tabs for Service Health, Document & Audio Ingestion, RAG Query, and LangGraph Agent.
 
 ---
 
@@ -34,10 +43,12 @@ This application ingests Confluence spaces and local files (PDF, DOCX, TXT, Mark
 | :--- | :--- |
 | **Backend API** | Python 3.9+, FastAPI, Uvicorn, Pydantic |
 | **LLM & Embeddings** | Ollama (`Qwen3:8b` default), Nomic (`nomic-embed-text`) |
+| **Speech-to-Text (STT)** | `faster-whisper` (CTranslate2 local C++ engine, `int8` CPU / `float16` GPU) |
+| **Supported Media** | Documents (`PDF`, `DOCX`, `TXT`, `MD`), Audio (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`) |
 | **Vector & Graph Store** | ChromaDB, In-Memory Graph Indexing |
 | **Orchestration** | LangChain, LangGraph |
 | **Evaluation** | DeepEval 2.0+, Pytest |
-| **Frontend UI** | Streamlit |
+| **Frontend UI** | Streamlit (`app.py`, `eval_dashboard.py`) |
 | **Monitoring** | Langfuse, Prometheus, Grafana |
 
 ---
@@ -50,21 +61,28 @@ This application ingests Confluence spaces and local files (PDF, DOCX, TXT, Mark
 │   ├── api/             # FastAPI routes (ingestion, RAG, agent, documents, health)
 │   ├── config/          # Application settings & environment configuration
 │   ├── embeddings/     # Embeddings provider wrappers
-│   ├── loaders/        # Confluence & document file loaders (PDF, DOCX, TXT, MD)
-│   ├── models/          # Pydantic request/response schemas
+│   ├── loaders/        # Confluence, document, and audio file loaders (PDF, DOCX, TXT, MD, Audio)
+│   ├── models/          # Pydantic request/response schemas (AudioQueryResponse, FileIngestResponse, etc.)
 │   ├── prompts/         # LLM system & user prompt templates
 │   ├── rag/             # Vector store & RAG pipeline implementation
-│   ├── services/        # Ollama, Langfuse, and DeepEval core services
+│   ├── services/        # Ollama, STT (faster-whisper), Langfuse, and DeepEval core services
 │   └── utils/           # Prometheus metrics & logger utilities
 ├── graph/               # LangGraph agent implementation & knowledge graph structure
 ├── evals/
-│   ├── datasets/        # Evaluation datasets (goldens & synthetic test cases)
+│   ├── datasets/        # Evaluation datasets (goldens & synthetic test cases with audio transcripts)
 │   └── scripts/         # DeepEval evaluation harness & synthetic case generator
 ├── eval_results/        # Output directory for latest.json, history, & metrics.csv
-├── frontend/            # Streamlit web application frontend
+├── frontend/
+│   ├── app.py           # Main Streamlit web application (4 tabs: Health, Ingestion, RAG, Agent)
+│   └── eval_dashboard.py# Interactive DeepEval results & trend dashboard
 ├── memory/              # Local document storage & metadata index (`documents.json`)
 ├── docker/              # Docker Compose, Prometheus, & Grafana configuration
-└── tests/               # Automated unit & integration tests
+├── scripts/
+│   ├── ingest_audio_dir.py   # Bulk local directory audio ingestion CLI tool
+│   └── run_eval_dashboard.sh # Launcher script for DeepEval dashboard
+├── .skills/
+│   └── audio-input-spec.md   # 100% Local Audio Ingestion & Voice Processing Spec
+└── tests/               # Automated unit & integration tests (STT service, Audio API, RAG, Agent)
 ```
 
 ---
@@ -99,6 +117,8 @@ Create a `.env` file in the root directory:
 OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=Qwen3:8b
 EMBEDDING_MODEL=nomic-embed-text
+STT_MODEL_SIZE=base
+STT_DEVICE=cpu
 CONFLUENCE_BASE_URL=https://your-instance.atlassian.net/wiki
 CONFLUENCE_EMAIL=your-email@example.com
 CONFLUENCE_API_TOKEN=your-confluence-api-token
@@ -131,13 +151,53 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
-## 🧪 Evaluation Framework (DeepEval)
+## 🎙️ Audio Ingestion & Voice Processing
+
+The platform includes **100% local, offline audio ingestion** and **voice querying capabilities** powered by `faster-whisper`. Zero audio data or transcriptions leave your local machine.
+
+### 1. Ingesting Meeting Recordings & Audio Files
+
+#### Dedicated Audio API (`POST /ingest/audio`):
+Upload meeting recordings to automatically generate an executive summary and index the full transcript:
+```bash
+curl -X POST "http://127.0.0.1:8000/ingest/audio?generate_summary=true" \
+  -F "file=@/path/to/meeting.mp3"
+```
+
+#### Bulk Local Directory Ingestion CLI Script:
+Scan and ingest an entire folder of local audio files:
+```bash
+python scripts/ingest_audio_dir.py --dir /path/to/audio/folder --api-url http://127.0.0.1:8000
+```
+
+#### Multi-Format File Upload (`POST /ingest/file`):
+Supports `.mp3`, `.wav`, `.m4a`, `.ogg`, `.flac`, and `.aac` files alongside documents.
+
+### 2. Asking Voice Questions (Voice RAG & Agent)
+
+Query the knowledge base using recorded audio or microphone capture:
+
+```bash
+# Voice RAG Query
+curl -X POST "http://127.0.0.1:8000/rag/query/audio?top_k=3" \
+  -F "file=@/path/to/voice_question.wav"
+
+# Voice LangGraph Agent Query
+curl -X POST "http://127.0.0.1:8000/agent/langgraph/query/audio?top_k=3" \
+  -F "file=@/path/to/voice_question.wav"
+```
+
+In the Streamlit UI (`frontend/app.py`), switch to **Voice / Audio Question** mode under the RAG or LangGraph Agent tabs to record your question directly with `st.audio_input`.
+
+---
+
+## 🧪 Evaluation Framework & Dashboard (DeepEval)
 
 This repository incorporates an automated DeepEval pipeline for evaluating and benchmarking RAG and LangGraph agent responses against ground truth datasets or generated synthetic cases.
 
 ### 1. Generating Synthetic Evaluation Datasets
 
-Automatically sample your indexed documents in `memory/documents.json` and generate factual, unsupported, and safety test cases:
+Automatically sample your indexed documents in `memory/documents.json` and generate factual, unsupported, audio transcript, and safety test cases:
 
 ```bash
 python evals/scripts/generate_synthetic_data.py --num-docs 5 --output evals/datasets/synthetic_cases.json
@@ -161,19 +221,17 @@ python evals/scripts/run_deepeval.py --target api-rag --dataset goldens --api-ur
 python evals/scripts/run_deepeval.py --target rag --dataset goldens --use-heuristics
 ```
 
-#### Supported Command Line Arguments:
-* `--target`: Choice of `rag`, `agent`, `api-rag`, `api-agent`.
-* `--dataset`: Choice of `goldens` (`evals/datasets/knowledge_base_cases.json`) or `synthetic` (`evals/datasets/synthetic_cases.json`).
-* `--top-k`: Number of context documents to retrieve per question (default: `3`).
-* `--api-url`: Base URL for API endpoints when using `api-*` targets (default: `http://127.0.0.1:8000`).
-* `--use-heuristics`: Forces fast heuristic evaluation without querying an LLM judge.
+### 3. Launching Interactive Evaluation Dashboard
 
-### 3. Reviewing Results
+Visualize evaluation metrics, historical trends, pass rates, and latency:
 
-Evaluation runs automatically generate reports:
-* **`eval_results/latest.json`**: Complete detailed evaluation report of the latest run.
-* **`eval_results/history/run_<target>_<dataset>_<timestamp>.json`**: Historical archive per run.
-* **`eval_results/metrics.csv`**: Time-series log containing metric scores for trend tracking over time.
+```bash
+./scripts/run_eval_dashboard.sh
+```
+Or launch directly:
+```bash
+streamlit run frontend/eval_dashboard.py
+```
 
 ---
 
@@ -184,9 +242,12 @@ Evaluation runs automatically generate reports:
 | `GET` | `/health` | Service health status and Ollama availability |
 | `GET` | `/metrics` | Prometheus metrics scrape endpoint |
 | `POST` | `/ingest/confluence` | Fetch and index pages from a Confluence space |
-| `POST` | `/ingest/file` | Ingest local PDF, DOCX, TXT, or MD files |
-| `POST` | `/rag/query` | Submit question to standard RAG pipeline |
-| `POST` | `/agent/langgraph/query` | Submit question to LangGraph reasoning agent |
+| `POST` | `/ingest/file` | Ingest local PDF, DOCX, TXT, MD, MP3, WAV, M4A, OGG, FLAC, AAC files |
+| `POST` | `/ingest/audio` | Dedicated local audio ingestion with LLM executive summary generation |
+| `POST` | `/rag/query` | Submit text question to standard RAG pipeline |
+| `POST` | `/rag/query/audio` | Submit voice/audio question to standard RAG pipeline |
+| `POST` | `/agent/langgraph/query` | Submit text question to LangGraph reasoning agent |
+| `POST` | `/agent/langgraph/query/audio` | Submit voice/audio question to LangGraph reasoning agent |
 | `GET` | `/documents/` | List all indexed documents |
 | `GET` | `/documents/{page_id}` | Retrieve specific document details |
 | `PATCH` | `/documents/{page_id}` | Update document metadata/content |
@@ -210,7 +271,7 @@ docker compose -f docker/docker-compose.yml up -d
 
 ## 🧪 Unit & Integration Testing
 
-Run the full pytest suite:
+Run the full pytest suite (including STT service and audio ingestion tests):
 
 ```bash
 pytest
@@ -221,4 +282,3 @@ pytest
 ## 📜 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
