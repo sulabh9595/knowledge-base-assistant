@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     confident_api_key: str = ""
     stt_model_size: str = "base"
     stt_device: str = "cpu"
+    enable_tts: bool = True
+    tts_provider: str = "edge-tts"
+    tts_default_voice: str = "en-US-AvaNeural"
+    tts_audio_format: str = "mp3"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

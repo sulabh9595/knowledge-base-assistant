@@ -13,7 +13,8 @@ default_backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 BASE_URL = st.sidebar.text_input("Backend URL", default_backend_url)
 
 st.sidebar.markdown("---")
-st.sidebar.write("Use this UI to ingest Confluence spaces and query the RAG / LangGraph agents.")
+enable_tts = st.sidebar.checkbox("🔊 Enable Text-to-Speech Output", value=True)
+st.sidebar.write("Use this UI to ingest Confluence spaces, query RAG / LangGraph agents, and synthesize speech.")
 
 
 def post_json(path: str, payload: dict) -> dict:
@@ -40,10 +41,23 @@ def get_json(path: str) -> dict:
         return response.json()
 
 
-st.title("Knowledge Base Assistant")
-st.markdown("A simple Streamlit UI for document ingestion, RAG querying, and LangGraph agent reasoning.")
+def render_audio_player(result: dict):
+    """Renders HTML5 st.audio player if audio_base64 is present in API response."""
+    audio_b64 = result.get("audio_base64")
+    if audio_b64:
+        try:
+            import base64
+            audio_bytes = base64.b64decode(audio_b64)
+            st.subheader("🔊 Audio Output")
+            st.audio(audio_bytes, format="audio/mp3")
+        except Exception as exc:
+            st.warning(f"Could not render audio playback: {exc}")
 
-tabs = st.tabs(["Health", "Document & Audio Ingestion", "RAG Query", "LangGraph Agent"])
+
+st.title("Knowledge Base Assistant")
+st.markdown("A simple Streamlit UI for document ingestion, RAG querying, LangGraph agent reasoning, and Text-to-Speech synthesis.")
+
+tabs = st.tabs(["Health", "Document & Audio Ingestion", "RAG Query", "LangGraph Agent", "Text-to-Audio (TTS)"])
 
 with tabs[0]:
     st.header("Service Health")
@@ -140,10 +154,11 @@ with tabs[2]:
                 st.warning("Enter a question to query the RAG endpoint.")
             else:
                 try:
-                    result = post_json("/rag/query", {"question": question, "top_k": top_k})
+                    result = post_json("/rag/query", {"question": question, "top_k": top_k, "include_audio": enable_tts})
                     st.success("RAG answer generated")
                     st.subheader("Answer")
                     st.markdown(result.get("answer", ""))
+                    render_audio_player(result)
                     st.subheader("Retrieved Documents")
                     st.json(result.get("retrieved_documents", []))
                 except httpx.HTTPError as exc:
@@ -170,6 +185,7 @@ with tabs[2]:
                     st.success("RAG Answer Generated")
                     st.subheader("Answer")
                     st.markdown(result.get("answer", ""))
+                    render_audio_player(result)
                     st.subheader("Retrieved Documents")
                     st.json(result.get("retrieved_documents", []))
                 except httpx.HTTPError as exc:
@@ -189,11 +205,12 @@ with tabs[3]:
                 try:
                     result = post_json(
                         "/agent/langgraph/query",
-                        {"question": question, "top_k": top_k},
+                        {"question": question, "top_k": top_k, "include_audio": enable_tts},
                     )
                     st.success("LangGraph answer generated")
                     st.subheader("Answer")
                     st.write(result.get("answer", ""))
+                    render_audio_player(result)
                     st.subheader("Graph Nodes")
                     st.json(result.get("nodes", []))
                 except httpx.HTTPError as exc:
@@ -220,7 +237,27 @@ with tabs[3]:
                     st.success("LangGraph Answer Generated")
                     st.subheader("Answer")
                     st.markdown(result.get("answer", ""))
+                    render_audio_player(result)
                     st.subheader("Retrieved Documents & Nodes")
                     st.json(result.get("retrieved_documents", []))
                 except httpx.HTTPError as exc:
                     st.error(f"Voice LangGraph query failed: {exc}")
+
+with tabs[4]:
+    st.header("🔊 Text-to-Audio (TTS) Synthesizer")
+    st.markdown("Convert arbitrary text into spoken audio.")
+
+    text_to_speak = st.text_area("Text to Synthesize", "Welcome to the Enterprise Agentic Knowledge Platform. How can I assist you today?", key="tts_input_text")
+    voice_selection = st.selectbox("Select Voice", ["en-US-AvaNeural", "en-US-AndrewNeural", "en-GB-SoniaNeural"], key="tts_voice_select")
+
+    if st.button("Synthesize Speech"):
+        if not text_to_speak.strip():
+            st.warning("Please enter text to synthesize.")
+        else:
+            try:
+                result = post_json("/tts/synthesize", {"text": text_to_speak, "voice": voice_selection})
+                st.success("Speech synthesized successfully!")
+                render_audio_player(result)
+            except httpx.HTTPError as exc:
+                st.error(f"Text-to-Speech synthesis failed: {exc}")
+

@@ -215,5 +215,133 @@
         "regression"
       ]
     }
+  },
+  {
+    "page_id": "audio_dcfc6dd61626",
+    "title": "Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "source_url": "file://uploaded/audio/Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "text": "Summary:\n**Executive Summary:**  \nClaude Code and Cursor both leverage the powerful Claude Opus 4.5 AI model but differ in their \"harness\" systems, which control how the AI operates. Cursor prioritizes efficiency and user control, requiring more manual input but saving costs. Claude emphasizes automation, aggressively fixing errors and debugging until the task is complete, but at the cost of higher token usage. The choice depends on whether you prioritize control/cost or automation/speed.  \n\n**Key Action Points:**  \n1. **Understand the Harness Difference:**  \n   - **Cursor:** Optimized for efficiency, cost-saving, and user control. Ideal for developers who prefer manual oversight and precision.  \n   - **Claude:** Aggressive automation, maximizing AI freedom to debug and fix errors, suitable for rapid development but with higher resource usage.  \n\n2. **Match Use Case to Priorities:**  \n   - **Choose Cursor** if: You value control, cost efficiency, and gradual learning.  \n   - **Choose Claude** if: You prioritize speed, automation, and reducing manual effort for complex tasks.  \n\n3. **Balance Trade-Offs:**  \n   - Cursor = More control, less automation (manual work, lower costs).  \n   - Claude = Less control, more automation (faster results, higher costs).  \n\n4. **Decision Criteria:**  \n   - **Beginner/Control-Focused:** Start with Cursor for structured, cost-effective development.  \n   - **Advanced/Speed-Focused:** Use Claude for rapid prototyping and automation-heavy workflows.  \n\n5. **Evaluate Based on Goals:**  \n   - Prioritize **cost and control** → Cursor.  \n   - Prioritize **speed and automation** → Claude.  \n   - Final choice depends on your project’s needs and resource constraints.\n\nFull Transcript:\nClaude code versus cursor. Which one should you actually use? Which one builds the better app and why do they feel so different even though they use the same AI? So here's the truth. Both Claude code and cursor use Claude Opus 4.5. One of the most powerful AI coding models are there. But just because they use the same model does not mean that they behave the same way. The big difference comes down to one thing, the harness. The harness is basically the control layer wrapped around the AI. It decides how much freedom the AI gets, how aggressively it works and how far it goes to solve your problem. Cursor's harness is optimized for efficiency. It tries to save tokens, save costs and keep things controlled. So what happens? It helps you write code but it won't go all in to fix everything. If there's an error, it often gives it back to you. You stay in control but you also do more manual work. Claude is the opposite. Its harness is aggressive, it gives the AI maximum freedom and it will keep going fixing errors, re-trying debugging until the thing actually works. It's almost like autonomous coding but yeah, it can burn through tokens fast. Now here's the important part. More power does not automatically mean better apps. You can build full production level apps in cursor. Cursor equals more control but Claude equals more automation. So which one should you choose? Begin a cursor. You learn fast and stay in control. More advanced Claude. You move faster and automate more. One saves money, the other saves effort. So pick your weapon on your own.",
+    "metadata": {
+      "file_type": ".mp3",
+      "space_key": "uploaded_audio",
+      "file_size": 1082333,
+      "media_type": "audio",
+      "duration_seconds": 95.06,
+      "language": "en",
+      "segment_count": 11,
+      "has_summary": true,
+      "word_count": 515,
+      "summary": "Summary: **Executive Summary:** Claude Code and Cursor both leverage the powerful Claude Opus 4.5 AI model but differ in their \"harness\" systems, which control how the AI operates.",
+      "source_domain": "uploaded",
+      "tags": [
+        "claude",
+        "control",
+        "cursor",
+        "automation",
+        "more"
+      ]
+    }
+  },
+  {
+    "page_id": "file_4bdc077bc524",
+    "title": "Playwright Implementation Plan for End-to-End Automation Testing.docx",
+    "source_url": "file://uploaded/Playwright Implementation Plan for End-to-End Automation Testing.docx",
+    "text": "Playwright Implementation Plan for End-to-End Automation Testing\nE-Commerce Application (Web, API & Mobile App)\nVersion: 1.0\nPrepared By: QA Automation Team\nTechnology Stack: Playwright + TypeScript\n1. Objective\nThe objective of this document is to define a scalable automation strategy for implementing Playwright across an E-Commerce ecosystem consisting of:\nWeb Application\nREST APIs\nMobile Application (Android & iOS)\nAdmin Portal (Optional)\nThe framework should support:\nFunctional Testing\nRegression Testing\nSmoke Testing\nAPI Testing\nCross-browser Testing\nMobile Web Testing\nEnd-to-End Business Flows\nCI/CD Execution\nReporting & Analytics\n2. Scope\nApplications Covered\n3. Proposed Automation Architecture\n                Jenkins / Azure DevOps / GitHub Actions\n                               │\n                               ▼\n                     Playwright Test Runner\n                               │\n     ┌──────────────┬───────────────┬───────────────┐\n     │              │               │\n     ▼              ▼               ▼\n  WEB Tests      API Tests      Mobile Tests\n     │              │               │\n     └──────────────┴───────────────┘\n                    │\n                    ▼\n             Shared Framework Layer\n                    │\n ┌─────────────────────────────────────────────┐\n │ Page Objects                               │\n │ API Clients                                │\n │ Utilities                                  │\n │ Test Data                                  │\n │ Configurations                             │\n │ Authentication                             │\n │ Database Utilities (Optional)              │\n └─────────────────────────────────────────────┘\n                    │\n                    ▼\n             Allure / HTML Reports\n4. Technology Stack\n5. Recommended Project Structure\nPlaywrightFramework\nsrc\n    pages\n        HomePage.ts\n        LoginPage.ts\n        ProductPage.ts\n        CartPage.ts\n        CheckoutPage.ts\n    api\n        auth.api.ts\n        product.api.ts\n        cart.api.ts\n        order.api.ts\n    mobile\n        screens\n        locators\n    fixtures\n        baseFixture.ts\n    utils\n        logger.ts\n        helpers.ts\n        constants.ts\n        apiHelper.ts\n    data\n        users.json\n        products.json\n    config\n        env.ts\ntests\n    web\n        smoke\n        regression\n        sanity\n    api\n        smoke\n        regression\n    mobile\n        android\n        ios\nreports\nallure-results\nplaywright.config.ts\npackage.json\nREADME.md\n6. Framework Design\nLayer 1\nTest Scripts\n↓\nLayer 2\nPage Objects\n↓\nLayer 3\nBusiness Components\n↓\nLayer 4\nUtilities\n↓\nLayer 5\nPlaywright Core\n7. Automation Coverage\nWeb\nAuthentication\nLogin\nLogout\nForgot Password\nRegistration\nSocial Login\nProduct\nSearch\nFilters\nSorting\nProduct Details\nWishlist\nReviews\nCart\nAdd Item\nRemove Item\nQuantity Update\nCoupon\nSave for Later\nCheckout\nAddress\nShipping\nPayment\nOrder Summary\nConfirmation\nUser Account\nOrders\nProfile\nAddress Management\nReturns\nWishlist\n8. API Automation Coverage\nAuthentication APIs\nLogin\nRegister\nRefresh Token\nLogout\nProduct APIs\nGet Products\nCategories\nSearch\nInventory\nCart APIs\nAdd Cart\nUpdate Cart\nDelete Cart\nCheckout APIs\nShipping\nPayment\nCoupons\nOrder Creation\nOrder APIs\nPlace Order\nCancel Order\nTrack Order\nOrder History\n9. Mobile Automation\nSince Playwright currently focuses on browsers, native Android and iOS app automation should be implemented using Appium, while Playwright can be used for mobile web testing.\nCoverage\nLogin\nSearch\nProduct Details\nCart\nCheckout\nPayment\nProfile\nPush Notification Validation (Appium)\nDeep Links (Appium)\n10. Test Design Pattern\nPage Object Model\nLogin Test\n↓\nLoginPage\n↓\nBasePage\n↓\nPlaywright\n11. Reusable Components\nAuthentication\nNavigation\nProduct Search\nAPI Clients\nCart Utility\nOrder Utility\nRetry Logic\nScreenshot Utility\nWait Helpers\nLogger\n12. Test Data Strategy\nSupported sources:\nJSON\nExcel\nEnvironment Variables\nDynamic API-generated data\nDatabase (optional)\nExample:\nusers.json\nproducts.json\naddresses.json\n13. Environment Management\nSupported environments:\nLocal\nQA\nSIT\nUAT\nProduction (Read-only)\nExample:\n.env.qa\n.env.sit\n.env.uat\n14. Browser Coverage\n15. Parallel Execution\nSupported using Playwright Workers.\nExample\nSmoke → 8 Workers\nRegression → 20 Workers\nAPI → 15 Workers\nExecution time can be reduced significantly through parallelization.\n16. Reporting\nReports to generate:\nPlaywright HTML Report\nAllure Report\nJUnit XML\nScreenshots\nVideos\nTrace Viewer\n17. Logging Strategy\nConsole Logs\nFile Logs\nAPI Request Logs\nAPI Response Logs\nBrowser Console Logs\nNetwork Logs\n18. CI/CD Pipeline\nDeveloper Commit\n↓\nGit Repository\n↓\nCI Pipeline\n↓\nInstall Dependencies\n↓\nBuild\n↓\nExecute Smoke Tests\n↓\nExecute Regression\n↓\nGenerate Report\n↓\nPublish Allure\n↓\nNotify Teams\n19. Test Execution Strategy\nPull Request\nSmoke\nDaily\nSmoke\nCritical Regression\nNightly\nFull Regression\nRelease\nEnd-to-End\nAPI\nWeb\nMobile\nCross Browser\n20. Folder Ownership\n21. Best Practices\nUse Page Object Model (POM).\nSeparate test logic from page interactions.\nUse API authentication to bypass repetitive UI login where appropriate.\nImplement retries only for known flaky scenarios.\nUse explicit waits and Playwright's built-in auto-waiting instead of fixed delays.\nStore test data outside test scripts.\nRun tests in parallel where possible.\nCapture screenshots, videos, and traces on failures.\nTag tests (@smoke, @regression, @api, @mobile, @critical) for selective execution.\nIntegrate code quality tools such as ESLint and Prettier.\n22. Recommended Test Distribution\n23. Implementation Roadmap\n24. Success Metrics (KPIs)\n25. Expected Benefits\nSingle automation framework for Web and API with seamless integration to mobile automation.\nFaster release cycles through parallel execution and CI/CD.\nImproved test reliability with Playwright's auto-waiting and robust locator strategies.\nComprehensive reporting with screenshots, videos, traces, and Allure dashboards.\nReusable, maintainable codebase following industry best practices.\nHigh regression coverage, reduced manual effort, and improved product quality across the e-commerce platform.",
+    "metadata": {
+      "file_type": ".docx",
+      "space_key": "uploaded_files",
+      "file_size": 228520,
+      "media_type": "document",
+      "duration_seconds": 0.0,
+      "language": "en",
+      "word_count": 712,
+      "summary": "Playwright Implementation Plan for End-to-End Automation Testing E-Commerce Application (Web, API & Mobile App) Version: 1.0 Prepared By: QA Automation Team Technology Stack: Playwright + TypeScript 1.",
+      "source_domain": "uploaded",
+      "tags": [
+        "playwright",
+        "test",
+        "mobile",
+        "automation",
+        "order"
+      ]
+    }
+  },
+  {
+    "page_id": "audio_1e271baf2e74",
+    "title": "Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "source_url": "file://uploaded/audio/Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "text": "Summary:\n**Executive Summary:**  \nClaude Code and Cursor both leverage the powerful Claude Opus 4.5 AI model but differ in their \"harness\" — the control layer governing AI behavior. Cursor’s harness prioritizes efficiency, cost-saving, and user control, requiring manual intervention for errors. Claude’s harness emphasizes automation, aggressively fixing errors and debugging until solutions are complete, at the cost of higher token usage. While both can build production apps, Cursor offers control and cost efficiency, while Claude enables faster, more autonomous development. The choice depends on whether you prioritize control or automation.  \n\n**Key Action Points:**  \n1. **Understand Harness Differences:**  \n   - Cursor: Optimized for efficiency, cost control, and user oversight.  \n   - Claude: Aggressive automation, error correction, and rapid problem-solving.  \n\n2. **Evaluate Priorities:**  \n   - **Control & Cost:** Choose Cursor for projects requiring manual oversight and budget management.  \n   - **Speed & Automation:** Opt for Claude to accelerate development with minimal manual intervention.  \n\n3. **Balance Trade-offs:**  \n   - Cursor requires more effort but saves costs.  \n   - Claude saves effort but consumes more resources.  \n\n4. **Use Case Guidance:**  \n   - Beginners or cost-sensitive projects: Cursor.  \n   - Complex, time-sensitive tasks: Claude.  \n\n5. **Test and Adapt:**  \n   - Experiment with both tools to determine which aligns best with your workflow and goals.\n\nFull Transcript:\nClaude code versus cursor. Which one should you actually use? Which one builds the better app and why do they feel so different even though they use the same AI? So here's the truth. Both Claude code and cursor use Claude Opus 4.5. One of the most powerful AI coding models are there. But just because they use the same model does not mean that they behave the same way. The big difference comes down to one thing, the harness. The harness is basically the control layer wrapped around the AI. It decides how much freedom the AI gets, how aggressively it works and how far it goes to solve your problem. Cursor's harness is optimized for efficiency. It tries to save tokens, save costs and keep things controlled. So what happens? It helps you write code but it won't go all in to fix everything. If there's an error, it often gives it back to you. You stay in control but you also do more manual work. Claude is the opposite. Its harness is aggressive, it gives the AI maximum freedom and it will keep going fixing errors, re-trying debugging until the thing actually works. It's almost like autonomous coding but yeah, it can burn through tokens fast. Now here's the important part. More power does not automatically mean better apps. You can build full production level apps in cursor. Cursor equals more control but Claude equals more automation. So which one should you choose? Begin a cursor. You learn fast and stay in control. More advanced Claude. You move faster and automate more. One saves money, the other saves effort. So pick your weapon on your own.",
+    "metadata": {
+      "file_type": ".mp3",
+      "space_key": "uploaded_audio",
+      "file_size": 1082333,
+      "media_type": "audio",
+      "duration_seconds": 95.06,
+      "language": "en",
+      "segment_count": 11,
+      "has_summary": true,
+      "word_count": 485,
+      "summary": "Summary: **Executive Summary:** Claude Code and Cursor both leverage the powerful Claude Opus 4.5 AI model but differ in their \"harness\" — the control layer governing AI behavior.",
+      "source_domain": "uploaded",
+      "tags": [
+        "claude",
+        "cursor",
+        "control",
+        "more",
+        "harness"
+      ]
+    }
+  },
+  {
+    "page_id": "audio_990e351a3aea",
+    "title": "Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "source_url": "file://uploaded/audio/Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "text": "Summary:\n**Executive Summary:**  \nClaude Code and Cursor both leverage Claude Opus 4.5, but their performance diverges due to differing \"harness\" systems. Cursor’s harness prioritizes efficiency, cost control, and user oversight, requiring manual intervention but offering precision. Claude’s harness emphasizes automation, aggressively solving problems with minimal user input, though at the cost of higher token usage. The choice depends on whether the user prioritizes control/efficiency (Cursor) or automation/speed (Claude). Both can build production apps, but the trade-offs in control, cost, and effort must be evaluated.  \n\n**Key Action Points:**  \n1. **Evaluate Priorities:**  \n   - Choose Cursor for control, learning, and cost efficiency.  \n   - Opt for Claude for automation, speed, and reducing manual effort.  \n2. **Test Both Tools:**  \n   - Assess how each handles error resolution, token usage, and workflow alignment with your team’s needs.  \n3. **Balance Trade-offs:**  \n   - Prioritize cost and precision with Cursor; prioritize speed and automation with Claude.  \n4. **Align with Team Goals:**  \n   - Select the tool that best matches your project’s requirements (e.g., rapid prototyping vs. meticulous development).  \n5. **Monitor Token Costs:**  \n   - Use Cursor to manage expenses, or Claude to accept higher costs for faster results.\n\nFull Transcript:\nClaude code versus cursor. Which one should you actually use? Which one builds the better app and why do they feel so different even though they use the same AI? So here's the truth. Both Claude code and cursor use Claude Opus 4.5. One of the most powerful AI coding models are there. But just because they use the same model does not mean that they behave the same way. The big difference comes down to one thing, the harness. The harness is basically the control layer wrapped around the AI. It decides how much freedom the AI gets, how aggressively it works and how far it goes to solve your problem. Cursor's harness is optimized for efficiency. It tries to save tokens, save costs and keep things controlled. So what happens? It helps you write code but it won't go all in to fix everything. If there's an error, it often gives it back to you. You stay in control but you also do more manual work. Claude is the opposite. Its harness is aggressive, it gives the AI maximum freedom and it will keep going fixing errors, re-trying debugging until the thing actually works. It's almost like autonomous coding but yeah, it can burn through tokens fast. Now here's the important part. More power does not automatically mean better apps. You can build full production level apps in cursor. Cursor equals more control but Claude equals more automation. So which one should you choose? Begin a cursor. You learn fast and stay in control. More advanced Claude. You move faster and automate more. One saves money, the other saves effort. So pick your weapon on your own.",
+    "metadata": {
+      "file_type": ".mp3",
+      "space_key": "uploaded_audio",
+      "file_size": 1082333,
+      "media_type": "audio",
+      "duration_seconds": 95.06,
+      "language": "en",
+      "segment_count": 11,
+      "has_summary": true,
+      "word_count": 479,
+      "summary": "Summary: **Executive Summary:** Claude Code and Cursor both leverage Claude Opus 4.5, but their performance diverges due to differing \"harness\" systems.",
+      "source_domain": "uploaded",
+      "tags": [
+        "claude",
+        "cursor",
+        "control",
+        "harness",
+        "more"
+      ]
+    }
+  },
+  {
+    "page_id": "audio_c48ca41e3245",
+    "title": "Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "source_url": "file://uploaded/audio/Claude Code vs Cursor_ Which AI Is Better For You_.mp3",
+    "text": "Summary:\n**Executive Summary:**  \nClaude Code and Cursor both leverage the same AI model (Claude Opus 4.5), but their performance diverges due to differing \"harnesses\"—control layers that dictate how the AI operates. Cursor prioritizes efficiency, cost control, and user oversight, requiring more manual input but offering precise control. Claude emphasizes automation, aggressively fixing errors and streamlining workflows, though at the cost of higher token usage. The choice between the two depends on whether the user prioritizes control/cost (Cursor) or automation/speed (Claude).  \n\n**Key Action Points:**  \n1. **Understand Harness Differences:**  \n   - Cursor’s harness balances efficiency and control; Claude’s harness prioritizes automation and speed.  \n2. **Evaluate Priorities:**  \n   - Choose **Cursor** for cost-effective, controlled development with manual oversight.  \n   - Choose **Claude** for rapid, automated problem-solving with minimal user intervention.  \n3. **Trade-Offs to Consider:**  \n   - Cursor: Lower costs but more manual effort; Claude: Higher costs but faster, self-correcting workflows.  \n4. **Use Case Alignment:**  \n   - Opt for Cursor for iterative, production-ready apps requiring precision.  \n   - Opt for Claude for complex, error-prone tasks needing aggressive automation.  \n5. **Test Both Tools:**  \n   - Pilot both to assess which aligns better with your workflow, team expertise, and project goals.\n\nFull Transcript:\nClaude code versus cursor. Which one should you actually use? Which one builds the better app and why do they feel so different even though they use the same AI? So here's the truth. Both Claude code and cursor use Claude Opus 4.5. One of the most powerful AI coding models are there. But just because they use the same model does not mean that they behave the same way. The big difference comes down to one thing, the harness. The harness is basically the control layer wrapped around the AI. It decides how much freedom the AI gets, how aggressively it works and how far it goes to solve your problem. Cursor's harness is optimized for efficiency. It tries to save tokens, save costs and keep things controlled. So what happens? It helps you write code but it won't go all in to fix everything. If there's an error, it often gives it back to you. You stay in control but you also do more manual work. Claude is the opposite. Its harness is aggressive, it gives the AI maximum freedom and it will keep going fixing errors, re-trying debugging until the thing actually works. It's almost like autonomous coding but yeah, it can burn through tokens fast. Now here's the important part. More power does not automatically mean better apps. You can build full production level apps in cursor. Cursor equals more control but Claude equals more automation. So which one should you choose? Begin a cursor. You learn fast and stay in control. More advanced Claude. You move faster and automate more. One saves money, the other saves effort. So pick your weapon on your own.",
+    "metadata": {
+      "file_type": ".mp3",
+      "space_key": "uploaded_audio",
+      "file_size": 1082333,
+      "media_type": "audio",
+      "duration_seconds": 95.06,
+      "language": "en",
+      "segment_count": 11,
+      "has_summary": true,
+      "word_count": 482,
+      "summary": "Summary: **Executive Summary:** Claude Code and Cursor both leverage the same AI model (Claude Opus 4.5), but their performance diverges due to differing \"harnesses\"—control layers that dictate how th...",
+      "source_domain": "uploaded",
+      "tags": [
+        "claude",
+        "cursor",
+        "control",
+        "more",
+        "harness"
+      ]
+    }
   }
 ]

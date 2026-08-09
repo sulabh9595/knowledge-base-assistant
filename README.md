@@ -7,9 +7,9 @@
 [![LangChain](https://img.shields.io/badge/LangChain-Enabled-1C3C3C?style=flat-square)](https://www.langchain.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, **faster-whisper**, and **DeepEval**.
+A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, **faster-whisper**, **edge-tts**, **gTTS**, and **DeepEval**.
 
-This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT`, `Markdown`), and local audio recordings (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs (with full text and voice question capabilities). It features an integrated **DeepEval evaluation harness**, **synthetic dataset generator**, and interactive **Streamlit evaluation dashboard** for continuous benchmarking of answer accuracy, context relevancy, hallucination rate, and safety.
+This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT`, `Markdown`), and local audio recordings (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs (with full text, voice question, and **Text-to-Audio / TTS spoken output** capabilities). It features an integrated **DeepEval evaluation harness**, **synthetic dataset generator**, and interactive **Streamlit evaluation dashboard** for continuous benchmarking of answer accuracy, context relevancy, hallucination rate, and safety.
 
 ---
 
@@ -23,6 +23,11 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 * **🎤 Voice Query & RAG Engine**:
   * Submit text or voice queries to RAG (`POST /rag/query/audio`) and LangGraph Agent (`POST /agent/langgraph/query/audio`).
   * Native microphone recording (`st.audio_input`) and audio query file upload in the Streamlit frontend.
+* **🔊 Text-to-Audio (TTS) Speech Synthesis & Audio Output**:
+  * Hear spoken answers automatically for all RAG and LangGraph agent responses.
+  * Multi-engine fallback chain: `edge-tts` (Microsoft Neural Voices) ➔ `gTTS` (Google Speech) ➔ macOS native `say` ➔ `pyttsx3`.
+  * Dedicated standalone REST API endpoints (`POST /tts/synthesize` and `POST /tts/stream`) to synthesize arbitrary text into base64 audio or streaming MP3/WAV files.
+  * Integrated HTML5 audio players (`st.audio`) in the Streamlit frontend with a `🔊 Enable Text-to-Speech Output` sidebar toggle.
 * **🧠 Dual Retrieval & Reasoning Engines**:
   * **RAG Pipeline**: Vector similarity retrieval with Chroma vector store and grounded response generation.
   * **LangGraph Agent**: Multi-step graph-based reasoning and document relationship mapping.
@@ -33,7 +38,7 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
   * **Multi-Metric Evaluation Harness**: Quantitative scoring for Faithfulness, Answer Relevancy, Contextual Precision/Recall, Hallucination, Toxicity, Bias, Refusal Quality, and Citation Quality.
   * **Interactive Dashboard**: Track metrics trends over time, compare historical runs, and analyze individual test cases via `frontend/eval_dashboard.py` (`scripts/run_eval_dashboard.sh`).
 * **📡 Observability & Tracing**: Native Langfuse trace logging, custom Prometheus metrics at `/metrics`, and ready-to-use Grafana monitoring dashboards.
-* **🖥️ Interactive UI**: Modern Streamlit web interface with tabs for Service Health, Document & Audio Ingestion, RAG Query, and LangGraph Agent.
+* **🖥️ Interactive UI**: Modern Streamlit web interface with 5 tabs: Service Health, Document & Audio Ingestion, RAG Query, LangGraph Agent, and Text-to-Audio (TTS) Synthesizer.
 
 ---
 
@@ -44,6 +49,7 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 | **Backend API** | Python 3.9+, FastAPI, Uvicorn, Pydantic |
 | **LLM & Embeddings** | Ollama (`Qwen3:8b` default), Nomic (`nomic-embed-text`) |
 | **Speech-to-Text (STT)** | `faster-whisper` (CTranslate2 local C++ engine, `int8` CPU / `float16` GPU) |
+| **Text-to-Speech (TTS)** | `edge-tts` (Neural Voices), `gTTS`, macOS native `say`, `pyttsx3` |
 | **Supported Media** | Documents (`PDF`, `DOCX`, `TXT`, `MD`), Audio (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`) |
 | **Vector & Graph Store** | ChromaDB, In-Memory Graph Indexing |
 | **Orchestration** | LangChain, LangGraph |
@@ -58,14 +64,14 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 ```
 .
 ├── app/
-│   ├── api/             # FastAPI routes (ingestion, RAG, agent, documents, health)
+│   ├── api/             # FastAPI routes (ingestion, RAG, agent, tts, documents, health)
 │   ├── config/          # Application settings & environment configuration
 │   ├── embeddings/     # Embeddings provider wrappers
 │   ├── loaders/        # Confluence, document, and audio file loaders (PDF, DOCX, TXT, MD, Audio)
-│   ├── models/          # Pydantic request/response schemas (AudioQueryResponse, FileIngestResponse, etc.)
+│   ├── models/          # Pydantic request/response schemas (RAGQueryResponse, TTSResponse, AudioQueryResponse, etc.)
 │   ├── prompts/         # LLM system & user prompt templates
 │   ├── rag/             # Vector store & RAG pipeline implementation
-│   ├── services/        # Ollama, STT (faster-whisper), Langfuse, and DeepEval core services
+│   ├── services/        # Ollama, STT (faster-whisper), TTS (edge-tts/gTTS/say), Langfuse, and DeepEval core services
 │   └── utils/           # Prometheus metrics & logger utilities
 ├── graph/               # LangGraph agent implementation & knowledge graph structure
 ├── evals/
@@ -73,7 +79,7 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 │   └── scripts/         # DeepEval evaluation harness & synthetic case generator
 ├── eval_results/        # Output directory for latest.json, history, & metrics.csv
 ├── frontend/
-│   ├── app.py           # Main Streamlit web application (4 tabs: Health, Ingestion, RAG, Agent)
+│   ├── app.py           # Main Streamlit web application (5 tabs: Health, Ingestion, RAG, Agent, TTS)
 │   └── eval_dashboard.py# Interactive DeepEval results & trend dashboard
 ├── memory/              # Local document storage & metadata index (`documents.json`)
 ├── docker/              # Docker Compose, Prometheus, & Grafana configuration
@@ -81,8 +87,9 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 │   ├── ingest_audio_dir.py   # Bulk local directory audio ingestion CLI tool
 │   └── run_eval_dashboard.sh # Launcher script for DeepEval dashboard
 ├── .skills/
+│   ├── text-to-audio.md      # Text-to-Audio (TTS) Integration Plan & Architecture Spec
 │   └── audio-input-spec.md   # 100% Local Audio Ingestion & Voice Processing Spec
-└── tests/               # Automated unit & integration tests (STT service, Audio API, RAG, Agent)
+└── tests/               # Automated unit & integration tests (TTS service, TTS API, STT service, RAG, Agent)
 ```
 
 ---
@@ -107,6 +114,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -e .
+pip install gTTS edge-tts
 ```
 
 ### 2. Configure Environment Variables
@@ -119,6 +127,9 @@ OLLAMA_MODEL=Qwen3:8b
 EMBEDDING_MODEL=nomic-embed-text
 STT_MODEL_SIZE=base
 STT_DEVICE=cpu
+ENABLE_TTS=true
+TTS_PROVIDER=edge-tts
+TTS_DEFAULT_VOICE=en-US-AvaNeural
 CONFLUENCE_BASE_URL=https://your-instance.atlassian.net/wiki
 CONFLUENCE_EMAIL=your-email@example.com
 CONFLUENCE_API_TOKEN=your-confluence-api-token
@@ -153,7 +164,7 @@ Open `http://localhost:8501` in your browser.
 
 ## 🎙️ Audio Ingestion & Voice Processing
 
-The platform includes **100% local, offline audio ingestion** and **voice querying capabilities** powered by `faster-whisper`. Zero audio data or transcriptions leave your local machine.
+The platform includes **100% local, offline audio ingestion**, **voice querying**, and **Text-to-Audio (TTS) speech synthesis**.
 
 ### 1. Ingesting Meeting Recordings & Audio Files
 
@@ -170,24 +181,26 @@ Scan and ingest an entire folder of local audio files:
 python scripts/ingest_audio_dir.py --dir /path/to/audio/folder --api-url http://127.0.0.1:8000
 ```
 
-#### Multi-Format File Upload (`POST /ingest/file`):
-Supports `.mp3`, `.wav`, `.m4a`, `.ogg`, `.flac`, and `.aac` files alongside documents.
+### 2. Asking Voice Questions & Hearing Audio Answers
 
-### 2. Asking Voice Questions (Voice RAG & Agent)
-
-Query the knowledge base using recorded audio or microphone capture:
+Query the knowledge base using voice or text and receive spoken audio responses:
 
 ```bash
-# Voice RAG Query
+# Voice RAG Query with Spoken Audio Output
 curl -X POST "http://127.0.0.1:8000/rag/query/audio?top_k=3" \
   -F "file=@/path/to/voice_question.wav"
 
-# Voice LangGraph Agent Query
+# Voice LangGraph Agent Query with Spoken Audio Output
 curl -X POST "http://127.0.0.1:8000/agent/langgraph/query/audio?top_k=3" \
   -F "file=@/path/to/voice_question.wav"
+
+# Standalone Text-to-Speech Endpoint
+curl -X POST "http://127.0.0.1:8000/tts/synthesize" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello, welcome to the knowledge platform.", "voice": "en-US-AvaNeural"}'
 ```
 
-In the Streamlit UI (`frontend/app.py`), switch to **Voice / Audio Question** mode under the RAG or LangGraph Agent tabs to record your question directly with `st.audio_input`.
+In the Streamlit UI (`frontend/app.py`), answers automatically include an audio playback control so you can **listen** to the AI generated responses.
 
 ---
 
@@ -244,10 +257,12 @@ streamlit run frontend/eval_dashboard.py
 | `POST` | `/ingest/confluence` | Fetch and index pages from a Confluence space |
 | `POST` | `/ingest/file` | Ingest local PDF, DOCX, TXT, MD, MP3, WAV, M4A, OGG, FLAC, AAC files |
 | `POST` | `/ingest/audio` | Dedicated local audio ingestion with LLM executive summary generation |
-| `POST` | `/rag/query` | Submit text question to standard RAG pipeline |
-| `POST` | `/rag/query/audio` | Submit voice/audio question to standard RAG pipeline |
-| `POST` | `/agent/langgraph/query` | Submit text question to LangGraph reasoning agent |
-| `POST` | `/agent/langgraph/query/audio` | Submit voice/audio question to LangGraph reasoning agent |
+| `POST` | `/rag/query` | Submit text question to standard RAG pipeline (returns text + audio) |
+| `POST` | `/rag/query/audio` | Submit voice/audio question to standard RAG pipeline (returns text + audio) |
+| `POST` | `/agent/langgraph/query` | Submit text question to LangGraph reasoning agent (returns text + audio) |
+| `POST` | `/agent/langgraph/query/audio` | Submit voice/audio question to LangGraph reasoning agent (returns text + audio) |
+| `POST` | `/tts/synthesize` | Synthesize arbitrary text into base64 encoded audio |
+| `POST` | `/tts/stream` | Stream synthesized audio directly as binary `audio/mpeg` or `audio/wav` |
 | `GET` | `/documents/` | List all indexed documents |
 | `GET` | `/documents/{page_id}` | Retrieve specific document details |
 | `PATCH` | `/documents/{page_id}` | Update document metadata/content |
@@ -271,7 +286,7 @@ docker compose -f docker/docker-compose.yml up -d
 
 ## 🧪 Unit & Integration Testing
 
-Run the full pytest suite (including STT service and audio ingestion tests):
+Run the full pytest suite (including STT, TTS service, and audio ingestion tests):
 
 ```bash
 pytest

@@ -30,7 +30,9 @@ dist/
 # Internal CLI & Tool artifacts
 .antigravitycli/
 .deepeval/
-.skills/
+
+# Data & Store
+chroma_store/
 
 # MCP servers (machine-specific paths)
 /.mcp.json

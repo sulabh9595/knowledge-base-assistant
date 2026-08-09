@@ -32,12 +32,15 @@ class ConfluenceIngestResponse(BaseModel):
 class RAGQueryRequest(BaseModel):
     question: str
     top_k: int = 3
+    include_audio: bool = True
 
 
 class RAGQueryResponse(BaseModel):
     question: str
     answer: str
     retrieved_documents: list[ConfluencePageSummary]
+    audio_base64: Optional[str] = None
+    audio_url: Optional[str] = None
 
 
 class DocumentListResponse(BaseModel):
@@ -92,6 +95,8 @@ class LangGraphCitation(BaseModel):
 class LangGraphQueryRequest(BaseModel):
     question: str
     top_k: int = 3
+    include_audio: bool = True
+
 
 
 class LangGraphQueryResponse(BaseModel):
@@ -99,6 +104,8 @@ class LangGraphQueryResponse(BaseModel):
     answer: str
     nodes: list[LangGraphNodeSummary]
     citations: list[LangGraphCitation]
+    audio_base64: Optional[str] = None
+    audio_url: Optional[str] = None
 
 
 class FileIngestResponse(BaseModel):
@@ -113,5 +120,20 @@ class AudioQueryResponse(BaseModel):
     audio_language: str
     answer: str
     retrieved_documents: list[dict[str, Any]]
+    audio_base64: Optional[str] = None
+    audio_url: Optional[str] = None
+
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: Optional[str] = None
+    format: str = "mp3"
+
+
+class TTSResponse(BaseModel):
+    text: str
+    audio_base64: str
+    format: str = "mp3"
+
 
 
