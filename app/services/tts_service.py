@@ -30,6 +30,17 @@ class TTSService:
         clean_text = text.replace("#", "").replace("*", "").replace("`", "").strip()
         selected_voice = voice or self.default_voice
 
+        # Azure Speech provider
+        if self.provider == "azure":
+            try:
+                azure_service = self._create_azure_service()
+                data = azure_service.synthesize_bytes(clean_text, voice=selected_voice, audio_format=self.audio_format)
+                if data:
+                    logger.info("Synthesized audio successfully using Azure Speech.")
+                    return data
+            except Exception as e:
+                logger.warning(f"Azure Speech synthesis failed: {e}. Falling back to existing engines...")
+
         # 1. Primary Engine: edge-tts (Microsoft Neural Voices)
         if self.provider == "edge-tts":
             try:
@@ -121,6 +132,10 @@ class TTSService:
 
         logger.warning("No operational TTS engine produced audio.")
         return b""
+
+    def _create_azure_service(self) -> Any:
+        from app.services.azure_speech_service import AzureSpeechService
+        return AzureSpeechService()
 
     async def synthesize_base64(self, text: str, voice: Optional[str] = None) -> str:
         """Synthesize text into a Base64-encoded audio string."""

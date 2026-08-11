@@ -1,6 +1,7 @@
 # Creator: Sulabh Bansod
 # Description: Unit tests for STTService and audio processing logic.
 
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch
 import pytest
 
@@ -52,3 +53,22 @@ def test_file_loader_read_audio(mock_transcribe):
     result = FileLoader.read_audio(b"audio_bytes", filename="sample.mp3")
     assert result["text"] == "Audio transcription sample text"
     assert result["duration"] == 5.0
+
+
+def test_stt_service_azure_provider_mock(monkeypatch):
+    class MockAzureSpeechService:
+        def transcribe_bytes(self, audio_bytes: bytes, filename: str = "audio.wav", language: Optional[str] = None) -> Dict[str, Any]:
+            return {
+                "text": "Azure transcription output",
+                "language": language or "en-US",
+                "language_probability": 1.0,
+                "duration": 2.0,
+                "segments": []
+            }
+
+    service = STTService(provider="azure")
+    monkeypatch.setattr(service, "_create_azure_service", lambda: MockAzureSpeechService())
+
+    result = service.transcribe_bytes(b"dummy_audio_bytes", filename="test.wav")
+    assert result["text"] == "Azure transcription output"
+    assert result["language"] == "en-US"

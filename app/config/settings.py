@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     confident_api_key: str = ""
     stt_model_size: str = "base"
     stt_device: str = "cpu"
+    stt_provider: str = "faster-whisper"
+    azure_speech_enabled: bool = False
+    azure_speech_key: str = ""
+    azure_speech_region: str = ""
+    azure_speech_endpoint: str = ""
+    azure_speech_tts_voice: str = "en-US-JennyNeural"
+    azure_stt_language: str = "en-US"
     enable_tts: bool = True
     tts_provider: str = "edge-tts"
     tts_default_voice: str = "en-US-AvaNeural"

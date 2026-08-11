@@ -25,8 +25,8 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
   * Native microphone recording (`st.audio_input`) and audio query file upload in the Streamlit frontend.
 * **🔊 Text-to-Audio (TTS) Speech Synthesis & Audio Output**:
   * Hear spoken answers automatically for all RAG and LangGraph agent responses.
-  * Multi-engine fallback chain: `edge-tts` (Microsoft Neural Voices) ➔ `gTTS` (Google Speech) ➔ macOS native `say` ➔ `pyttsx3`.
-  * Dedicated standalone REST API endpoints (`POST /tts/synthesize` and `POST /tts/stream`) to synthesize arbitrary text into base64 audio or streaming MP3/WAV files.
+  * Multi-engine fallback chain: `azure` (Azure Speech) ➔ `edge-tts` (Microsoft Neural Voices) ➔ `gTTS` (Google Speech) ➔ macOS native `say` ➔ `pyttsx3`.
+  * Dedicated standalone REST API endpoints (`POST /tts/synthesize`, `POST /tts/stream`, and `POST /tts/validate`) to synthesize arbitrary text, stream audio, and verify generated audio/transcript quality.
   * Integrated HTML5 audio players (`st.audio`) in the Streamlit frontend with a `🔊 Enable Text-to-Speech Output` sidebar toggle.
 * **🧠 Dual Retrieval & Reasoning Engines**:
   * **RAG Pipeline**: Vector similarity retrieval with Chroma vector store and grounded response generation.
@@ -48,8 +48,8 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 | :--- | :--- |
 | **Backend API** | Python 3.9+, FastAPI, Uvicorn, Pydantic |
 | **LLM & Embeddings** | Ollama (`Qwen3:8b` default), Nomic (`nomic-embed-text`) |
-| **Speech-to-Text (STT)** | `faster-whisper` (CTranslate2 local C++ engine, `int8` CPU / `float16` GPU) |
-| **Text-to-Speech (TTS)** | `edge-tts` (Neural Voices), `gTTS`, macOS native `say`, `pyttsx3` |
+| **Speech-to-Text (STT)** | `azure` (Azure Speech, optional), `faster-whisper` (CTranslate2 local C++ engine, `int8` CPU / `float16` GPU) |
+| **Text-to-Speech (TTS)** | `azure` (Azure Speech, optional), `edge-tts` (Neural Voices), `gTTS`, macOS native `say`, `pyttsx3` |
 | **Supported Media** | Documents (`PDF`, `DOCX`, `TXT`, `MD`), Audio (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`) |
 | **Vector & Graph Store** | ChromaDB, In-Memory Graph Indexing |
 | **Orchestration** | LangChain, LangGraph |
@@ -130,6 +130,12 @@ STT_DEVICE=cpu
 ENABLE_TTS=true
 TTS_PROVIDER=edge-tts
 TTS_DEFAULT_VOICE=en-US-AvaNeural
+# Optional Azure Speech configuration
+AZURE_SPEECH_ENABLED=false
+AZURE_SPEECH_KEY=
+AZURE_SPEECH_REGION=
+AZURE_SPEECH_ENDPOINT=
+AZURE_SPEECH_TTS_VOICE=en-US-JennyNeural
 CONFLUENCE_BASE_URL=https://your-instance.atlassian.net/wiki
 CONFLUENCE_EMAIL=your-email@example.com
 CONFLUENCE_API_TOKEN=your-confluence-api-token
@@ -179,6 +185,14 @@ curl -X POST "http://127.0.0.1:8000/ingest/audio?generate_summary=true" \
 Scan and ingest an entire folder of local audio files:
 ```bash
 python scripts/ingest_audio_dir.py --dir /path/to/audio/folder --api-url http://127.0.0.1:8000
+```
+
+### 1.5. Validating Synthesized Audio
+Validate generated audio and transcript quality with the new `/tts/validate` endpoint.
+```bash
+curl -X POST "http://127.0.0.1:8000/tts/validate" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello world", "expected_text": "hello world", "stt_text": "hello world"}'
 ```
 
 ### 2. Asking Voice Questions & Hearing Audio Answers
@@ -263,6 +277,7 @@ streamlit run frontend/eval_dashboard.py
 | `POST` | `/agent/langgraph/query/audio` | Submit voice/audio question to LangGraph reasoning agent (returns text + audio) |
 | `POST` | `/tts/synthesize` | Synthesize arbitrary text into base64 encoded audio |
 | `POST` | `/tts/stream` | Stream synthesized audio directly as binary `audio/mpeg` or `audio/wav` |
+| `POST` | `/tts/validate` | Validate synthesized audio and optional STT transcript similarity for text inputs |
 | `GET` | `/documents/` | List all indexed documents |
 | `GET` | `/documents/{page_id}` | Retrieve specific document details |
 | `PATCH` | `/documents/{page_id}` | Update document metadata/content |

@@ -136,4 +136,23 @@ class TTSResponse(BaseModel):
     format: str = "mp3"
 
 
+class TTSValidationRequest(BaseModel):
+    text: str
+    expected_text: Optional[str] = None
+    stt_text: Optional[str] = None
+    voice: Optional[str] = None
+    format: str = "mp3"
+
+
+class TTSValidationResponse(BaseModel):
+    text: str
+    expected_text: Optional[str] = None
+    tts_ok: bool
+    stt_ok: bool
+    similarity: float
+    word_error_rate: float
+    tts_details: dict[str, Any]
+    stt_details: dict[str, Any]
+
+
 

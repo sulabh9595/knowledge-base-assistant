@@ -1,5 +1,7 @@
 """Unit test suite for TTSService audio synthesis."""
 
+from typing import Optional
+
 import pytest
 from unittest.mock import patch, AsyncMock
 from app.services.tts_service import TTSService, tts_service
@@ -40,3 +42,17 @@ async def test_tts_service_fallback_on_error():
     # Calling synthesize_bytes should complete gracefully without unhandled crashes
     result = await service.synthesize_bytes("Test fallback")
     assert isinstance(result, bytes)
+
+
+@pytest.mark.asyncio
+async def test_tts_service_azure_provider_mock():
+    """Verify Azure provider branch is invoked and returns audio bytes."""
+    service = TTSService(provider="azure")
+
+    class MockAzureSpeechService:
+        def synthesize_bytes(self, text: str, voice: Optional[str] = None, audio_format: str = "mp3") -> bytes:
+            return b"AZURE_FAKE_AUDIO"
+
+    with patch.object(service, "_create_azure_service", return_value=MockAzureSpeechService()):
+        result = await service.synthesize_bytes("Hello from Azure")
+        assert result == b"AZURE_FAKE_AUDIO"

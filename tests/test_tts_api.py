@@ -29,6 +29,23 @@ def test_tts_synthesize_empty_text_error():
     assert response.status_code == 400
 
 
+def test_tts_validate_endpoint():
+    """Test /tts/validate POST endpoint for audio validation."""
+    with patch("app.api.tts.tts_service.synthesize_bytes", new_callable=AsyncMock) as mock_synth:
+        mock_synth.return_value = b"FAKE_AUDIO"
+
+        response = client.post(
+            "/tts/validate",
+            json={"text": "Hello validation", "expected_text": "hello validation", "stt_text": "hello validation"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["tts_ok"] is True
+        assert data["stt_ok"] is True
+        assert data["word_error_rate"] == 0.0
+
+
 def test_rag_query_with_include_audio():
     """Test /rag/query with include_audio=True."""
     with patch("app.api.rag.rag_service.query") as mock_rag, \

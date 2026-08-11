@@ -7,7 +7,8 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import StreamingResponse
 import io
 
-from app.models.schemas import TTSRequest, TTSResponse
+from app.models.schemas import TTSRequest, TTSResponse, TTSValidationRequest, TTSValidationResponse
+from app.services.audio_validation_service import AudioValidationService
 from app.services.tts_service import tts_service
 
 router = APIRouter(prefix="/tts", tags=["tts"])
@@ -49,3 +50,42 @@ async def stream_audio(request: TTSRequest):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"TTS streaming error: {exc}")
+
+
+@router.post("/validate", response_model=TTSValidationResponse)
+async def validate_audio_pipeline(request: TTSValidationRequest):
+    """Validate the audio pipeline by checking synthesized audio and optional transcript similarity."""
+    try:
+        if not request.text or not request.text.strip():
+            raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
+
+        audio_bytes = await tts_service.synthesize_bytes(request.text, voice=request.voice)
+        validator = AudioValidationService()
+        tts_result = validator.validate_tts_output(audio_bytes)
+
+        if request.expected_text is not None:
+            stt_result = {"text": request.stt_text or ""}
+            stt_details = validator.validate_stt_output(stt_result, request.expected_text)
+        else:
+            stt_details = {
+                "ok": True,
+                "text": request.stt_text or "",
+                "expected_text": request.expected_text or "",
+                "similarity": 1.0,
+                "word_error_rate": 0.0,
+            }
+
+        return TTSValidationResponse(
+            text=request.text,
+            expected_text=request.expected_text,
+            tts_ok=tts_result["ok"],
+            stt_ok=stt_details["ok"],
+            similarity=stt_details["similarity"],
+            word_error_rate=stt_details["word_error_rate"],
+            tts_details=tts_result,
+            stt_details=stt_details,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Audio validation error: {exc}")

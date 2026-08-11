@@ -15,9 +15,11 @@ logger = logging.getLogger(__name__)
 class STTService:
     """Service wrapper for Speech-to-Text transcription."""
 
-    def __init__(self, model_size: Optional[str] = None, device: Optional[str] = None):
+    def __init__(self, model_size: Optional[str] = None, device: Optional[str] = None, provider: Optional[str] = None, language: Optional[str] = None):
         self.model_size = model_size or getattr(settings, "stt_model_size", "base")
         self.device = device or getattr(settings, "stt_device", "cpu")
+        self.provider = provider or getattr(settings, "stt_provider", "faster-whisper")
+        self.language = language or getattr(settings, "azure_stt_language", "en-US")
         self._model = None
 
     @property
@@ -55,7 +57,16 @@ class STTService:
         if not suffix:
             suffix = ".wav"
 
-        # Temporary file context for faster-whisper file reader
+        # Azure Speech provider
+        if self.provider == "azure":
+            try:
+                azure_service = self._create_azure_service()
+                azure_result = azure_service.transcribe_bytes(audio_bytes, filename=filename, language=self.language)
+                if azure_result.get("text"):
+                    return azure_result
+            except Exception as exc:
+                logger.warning(f"Azure STT failed: {exc}. Falling back to local speech transcription.")
+
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
             temp_path = temp_file.name
             temp_file.write(audio_bytes)
@@ -114,6 +125,10 @@ class STTService:
                     os.remove(temp_path)
                 except Exception:
                     pass
+
+    def _create_azure_service(self) -> Any:
+        from app.services.azure_speech_service import AzureSpeechService
+        return AzureSpeechService()
 
 
 stt_service = STTService()
