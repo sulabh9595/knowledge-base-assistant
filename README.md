@@ -3,13 +3,14 @@
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.30+-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Kokoro TTS](https://img.shields.io/badge/Kokoro_TTS-82M_Neural-FF6F00?style=flat-square)](https://huggingface.co/hexgrad/Kokoro-82M)
 [![DeepEval](https://img.shields.io/badge/DeepEval-2.0+-5F27CD?style=flat-square)](https://confident-ai.com)
 [![LangChain](https://img.shields.io/badge/LangChain-Enabled-1C3C3C?style=flat-square)](https://www.langchain.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, **faster-whisper**, **edge-tts**, **gTTS**, and **DeepEval**.
+A local-first, production-grade AI Knowledge Base Assistant built with **FastAPI**, **Streamlit**, **LangGraph**, **ChromaDB**, **Ollama**, **faster-whisper**, **Kokoro-82M Neural TTS**, **edge-tts**, **gTTS**, and **DeepEval**.
 
-This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT`, `Markdown`), and local audio recordings (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs (with full text, voice question, and **Text-to-Audio / TTS spoken output** capabilities). It features an integrated **DeepEval evaluation harness**, **synthetic dataset generator**, and interactive **Streamlit evaluation dashboard** for continuous benchmarking of answer accuracy, context relevancy, hallucination rate, and safety.
+This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT`, `Markdown`), and local audio recordings (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`), indexes them into a local vector and graph store, and serves both standard RAG and multi-step agentic reasoning APIs (with full text, voice question, and **Text-to-Audio / TTS spoken output** capabilities). It features an integrated **Kokoro Local Neural TTS Engine**, **TTS Quality & Evaluation Framework** (SNR, Clipping, WER/CER, Prosody, Latency RTF), **DeepEval evaluation harness**, **synthetic dataset generator**, and interactive **Streamlit evaluation dashboard**.
 
 ---
 
@@ -23,11 +24,16 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 * **🎤 Voice Query & RAG Engine**:
   * Submit text or voice queries to RAG (`POST /rag/query/audio`) and LangGraph Agent (`POST /agent/langgraph/query/audio`).
   * Native microphone recording (`st.audio_input`) and audio query file upload in the Streamlit frontend.
-* **🔊 Text-to-Audio (TTS) Speech Synthesis & Audio Output**:
+* **🔊 Kokoro Neural Text-to-Audio (TTS) & Multi-Engine Fallback**:
   * Hear spoken answers automatically for all RAG and LangGraph agent responses.
-  * Multi-engine fallback chain: `azure` (Azure Speech) ➔ `edge-tts` (Microsoft Neural Voices) ➔ `gTTS` (Google Speech) ➔ macOS native `say` ➔ `pyttsx3`.
-  * Dedicated standalone REST API endpoints (`POST /tts/synthesize`, `POST /tts/stream`, and `POST /tts/validate`) to synthesize arbitrary text, stream audio, and verify generated audio/transcript quality.
-  * Integrated HTML5 audio players (`st.audio`) in the Streamlit frontend with a `🔊 Enable Text-to-Speech Output` sidebar toggle.
+  * **Kokoro-82M Open-Source Local Neural TTS Engine**: 100% local, privacy-first, ultra-fast speech synthesis with custom voice profiles (`af_heart`, `af_bella`, `am_adam`, `am_michael`, `bf_emma`) and speaking speed multiplier ($0.5\times$ to $2.0\times$).
+  * Multi-engine fallback chain: `kokoro` ➔ `edge-tts` (Microsoft Neural Voices) ➔ `azure` (Azure Speech) ➔ `gTTS` (Google Speech) ➔ macOS native `say` ➔ `pyttsx3`.
+  * Automatic voice resolution mapping when falling back from Kokoro to Edge TTS (`am_michael` $\to$ `en-US-GuyNeural`, `am_adam` $\to$ `en-US-AndrewNeural`, `af_heart` $\to$ `en-US-AvaNeural`).
+  * Dedicated standalone REST API endpoints (`POST /tts/synthesize`, `POST /tts/stream`, and `POST /tts/validate`).
+  * Integrated HTML5 audio players (`st.audio`) in the Streamlit frontend with provider, voice, and speed controls.
+* **📊 TTS Quality & Performance Evaluation Framework**:
+  * **Multi-Dimensional Quality Metrics**: Evaluates Signal-to-Noise Ratio (SNR), Clipping Ratio, Word Error Rate (WER), Character Error Rate (CER), Levenshtein similarity, Prosody ($F_0$ pitch dynamics, Words Per Minute WPM, pause ratio), Real-Time Factor ($\text{RTF} = \frac{\text{Synthesis Time}}{\text{Audio Duration}}$), and composite $0-100$ quality scores.
+  * **Automated Benchmark Runner**: Run comprehensive benchmark suites across TTS providers via `python evals/benchmark_tts.py` and inspect automatically saved JSON execution reports at `evals/results/tts_benchmark_results.json`.
 * **🧠 Dual Retrieval & Reasoning Engines**:
   * **RAG Pipeline**: Vector similarity retrieval with Chroma vector store and grounded response generation.
   * **LangGraph Agent**: Multi-step graph-based reasoning and document relationship mapping.
@@ -49,7 +55,8 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 | **Backend API** | Python 3.9+, FastAPI, Uvicorn, Pydantic |
 | **LLM & Embeddings** | Ollama (`Qwen3:8b` default), Nomic (`nomic-embed-text`) |
 | **Speech-to-Text (STT)** | `azure` (Azure Speech, optional), `faster-whisper` (CTranslate2 local C++ engine, `int8` CPU / `float16` GPU) |
-| **Text-to-Speech (TTS)** | `azure` (Azure Speech, optional), `edge-tts` (Neural Voices), `gTTS`, macOS native `say`, `pyttsx3` |
+| **Text-to-Speech (TTS)** | `kokoro` (Local 82M Neural TTS), `edge-tts` (Neural Voices), `azure` (Azure Speech), `gTTS`, macOS `say`, `pyttsx3` |
+| **TTS Evaluation** | `jiwer` (WER/CER), `soundfile`, `numpy`, Signal SNR & Clipping Analysis |
 | **Supported Media** | Documents (`PDF`, `DOCX`, `TXT`, `MD`), Audio (`MP3`, `WAV`, `M4A`, `OGG`, `FLAC`, `AAC`) |
 | **Vector & Graph Store** | ChromaDB, In-Memory Graph Indexing |
 | **Orchestration** | LangChain, LangGraph |
@@ -68,14 +75,16 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 │   ├── config/          # Application settings & environment configuration
 │   ├── embeddings/     # Embeddings provider wrappers
 │   ├── loaders/        # Confluence, document, and audio file loaders (PDF, DOCX, TXT, MD, Audio)
-│   ├── models/          # Pydantic request/response schemas (RAGQueryResponse, TTSResponse, AudioQueryResponse, etc.)
+│   ├── models/          # Pydantic schemas (RAGQueryResponse, TTSQualityMetrics, TTSResponse, etc.)
 │   ├── prompts/         # LLM system & user prompt templates
 │   ├── rag/             # Vector store & RAG pipeline implementation
-│   ├── services/        # Ollama, STT (faster-whisper), TTS (edge-tts/gTTS/say), Langfuse, and DeepEval core services
+│   ├── services/        # Kokoro TTS, TTSService, STT (faster-whisper), AudioValidation, Ollama, DeepEval services
 │   └── utils/           # Prometheus metrics & logger utilities
 ├── graph/               # LangGraph agent implementation & knowledge graph structure
 ├── evals/
+│   ├── benchmark_tts.py # Automated TTS Quality & Latency Benchmark Script
 │   ├── datasets/        # Evaluation datasets (goldens & synthetic test cases with audio transcripts)
+│   ├── results/         # Benchmark outputs (tts_benchmark_results.json)
 │   └── scripts/         # DeepEval evaluation harness & synthetic case generator
 ├── eval_results/        # Output directory for latest.json, history, & metrics.csv
 ├── frontend/
@@ -87,9 +96,11 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 │   ├── ingest_audio_dir.py   # Bulk local directory audio ingestion CLI tool
 │   └── run_eval_dashboard.sh # Launcher script for DeepEval dashboard
 ├── .skills/
-│   ├── text-to-audio.md      # Text-to-Audio (TTS) Integration Plan & Architecture Spec
-│   └── audio-input-spec.md   # 100% Local Audio Ingestion & Voice Processing Spec
-└── tests/               # Automated unit & integration tests (TTS service, TTS API, STT service, RAG, Agent)
+│   ├── kokoro-tts.md     # Kokoro TTS Integration Specification
+│   ├── tts-evaluation.md # TTS Evaluation & Quality Benchmarking Specification
+│   ├── text-to-audio.md  # Text-to-Audio (TTS) Integration Plan & Architecture Spec
+│   └── audio-input-spec.md# 100% Local Audio Ingestion & Voice Processing Spec
+└── tests/               # Automated unit & integration test suite (Kokoro TTS, TTS metrics, STT, RAG, Agent)
 ```
 
 ---
@@ -107,14 +118,14 @@ This application ingests Confluence spaces, local documents (`PDF`, `DOCX`, `TXT
 
 ### 1. Environment Setup
 
-Clone the repository and install the package in editable mode:
+Clone the repository and install dependencies inside the virtual environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -e .
-pip install gTTS edge-tts
+pip install kokoro soundfile jiwer gTTS edge-tts
 ```
 
 ### 2. Configure Environment Variables
@@ -128,8 +139,12 @@ EMBEDDING_MODEL=nomic-embed-text
 STT_MODEL_SIZE=base
 STT_DEVICE=cpu
 ENABLE_TTS=true
-TTS_PROVIDER=edge-tts
-TTS_DEFAULT_VOICE=en-US-AvaNeural
+TTS_PROVIDER=kokoro
+TTS_DEFAULT_VOICE=af_heart
+KOKORO_TTS_ENABLED=true
+KOKORO_TTS_VOICE=af_heart
+KOKORO_TTS_SPEED=1.0
+KOKORO_TTS_LANG_CODE=a
 # Optional Azure Speech configuration
 AZURE_SPEECH_ENABLED=false
 AZURE_SPEECH_KEY=
@@ -147,11 +162,12 @@ CONFIDENT_API_KEY=
 
 ### 3. Run Backend API
 
-Start the FastAPI service:
+Start the FastAPI service using the virtual environment python:
 
 ```bash
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+./.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+*(Or activate `.venv` first: `source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000`)*
 
 * API Docs (Swagger): `http://127.0.0.1:8000/docs`
 * Health Check: `http://127.0.0.1:8000/health`
@@ -161,7 +177,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 In a separate terminal, launch the Streamlit UI:
 
 ```bash
-streamlit run frontend/app.py
+./.venv/bin/streamlit run frontend/app.py
 ```
 
 Open `http://localhost:8501` in your browser.
@@ -169,8 +185,6 @@ Open `http://localhost:8501` in your browser.
 ---
 
 ## 🎙️ Audio Ingestion & Voice Processing
-
-The platform includes **100% local, offline audio ingestion**, **voice querying**, and **Text-to-Audio (TTS) speech synthesis**.
 
 ### 1. Ingesting Meeting Recordings & Audio Files
 
@@ -184,20 +198,10 @@ curl -X POST "http://127.0.0.1:8000/ingest/audio?generate_summary=true" \
 #### Bulk Local Directory Ingestion CLI Script:
 Scan and ingest an entire folder of local audio files:
 ```bash
-python scripts/ingest_audio_dir.py --dir /path/to/audio/folder --api-url http://127.0.0.1:8000
-```
-
-### 1.5. Validating Synthesized Audio
-Validate generated audio and transcript quality with the new `/tts/validate` endpoint.
-```bash
-curl -X POST "http://127.0.0.1:8000/tts/validate" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Hello world", "expected_text": "hello world", "stt_text": "hello world"}'
+./.venv/bin/python scripts/ingest_audio_dir.py --dir /path/to/audio/folder --api-url http://127.0.0.1:8000
 ```
 
 ### 2. Asking Voice Questions & Hearing Audio Answers
-
-Query the knowledge base using voice or text and receive spoken audio responses:
 
 ```bash
 # Voice RAG Query with Spoken Audio Output
@@ -208,56 +212,62 @@ curl -X POST "http://127.0.0.1:8000/rag/query/audio?top_k=3" \
 curl -X POST "http://127.0.0.1:8000/agent/langgraph/query/audio?top_k=3" \
   -F "file=@/path/to/voice_question.wav"
 
-# Standalone Text-to-Speech Endpoint
+# Standalone Text-to-Speech Endpoint with Kokoro Provider & Custom Speed
 curl -X POST "http://127.0.0.1:8000/tts/synthesize" \
   -H "Content-Type: application/json" \
-  -d '{"text": "Hello, welcome to the knowledge platform.", "voice": "en-US-AvaNeural"}'
+  -d '{"text": "Hello, welcome to the knowledge platform.", "provider": "kokoro", "voice": "am_michael", "speed": 1.0}'
 ```
-
-In the Streamlit UI (`frontend/app.py`), answers automatically include an audio playback control so you can **listen** to the AI generated responses.
 
 ---
 
-## 🧪 Evaluation Framework & Dashboard (DeepEval)
+## 📊 TTS Evaluation & Benchmarking Framework
 
-This repository incorporates an automated DeepEval pipeline for evaluating and benchmarking RAG and LangGraph agent responses against ground truth datasets or generated synthetic cases.
+### 1. Validating Synthesized Audio (`POST /tts/validate`)
+
+Validate generated audio, signal quality (SNR, clipping), real-time latency (RTF), and transcript similarity (WER/CER):
+```bash
+curl -X POST "http://127.0.0.1:8000/tts/validate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "The quick brown fox jumps over the lazy dog.",
+    "expected_text": "The quick brown fox jumps over the lazy dog.",
+    "provider": "kokoro",
+    "voice": "am_michael"
+  }'
+```
+
+### 2. Running Automated TTS Benchmarks
+
+Run automated TTS quality, latency, and RTF benchmarks across providers:
+```bash
+./.venv/bin/python evals/benchmark_tts.py
+```
+Benchmark outputs are displayed in stdout and automatically saved to [`evals/results/tts_benchmark_results.json`](file:///Users/sulabh/Documents/Knowledge%20Base%20Application/evals/results/tts_benchmark_results.json).
+
+---
+
+## 🧪 DeepEval Evaluation Framework & Dashboard
 
 ### 1. Generating Synthetic Evaluation Datasets
 
-Automatically sample your indexed documents in `memory/documents.json` and generate factual, unsupported, audio transcript, and safety test cases:
-
 ```bash
-python evals/scripts/generate_synthetic_data.py --num-docs 5 --output evals/datasets/synthetic_cases.json
+./.venv/bin/python evals/scripts/generate_synthetic_data.py --num-docs 5 --output evals/datasets/synthetic_cases.json
 ```
 
-### 2. Running Evaluation Harness
-
-Run the evaluation harness against RAG or Agent pipelines:
+### 2. Running DeepEval Evaluation Harness
 
 ```bash
 # Evaluate RAG pipeline against Golden cases
-python evals/scripts/run_deepeval.py --target rag --dataset goldens --top-k 3
+./.venv/bin/python evals/scripts/run_deepeval.py --target rag --dataset goldens --top-k 3
 
 # Evaluate LangGraph Agent against Synthetic cases
-python evals/scripts/run_deepeval.py --target agent --dataset synthetic --top-k 3
-
-# Evaluate live FastAPI HTTP endpoints
-python evals/scripts/run_deepeval.py --target api-rag --dataset goldens --api-url http://127.0.0.1:8000
-
-# Fast heuristic evaluation (no LLM judge overhead)
-python evals/scripts/run_deepeval.py --target rag --dataset goldens --use-heuristics
+./.venv/bin/python evals/scripts/run_deepeval.py --target agent --dataset synthetic --top-k 3
 ```
 
 ### 3. Launching Interactive Evaluation Dashboard
 
-Visualize evaluation metrics, historical trends, pass rates, and latency:
-
 ```bash
-./scripts/run_eval_dashboard.sh
-```
-Or launch directly:
-```bash
-streamlit run frontend/eval_dashboard.py
+./.venv/bin/streamlit run frontend/eval_dashboard.py
 ```
 
 ---
@@ -275,9 +285,9 @@ streamlit run frontend/eval_dashboard.py
 | `POST` | `/rag/query/audio` | Submit voice/audio question to standard RAG pipeline (returns text + audio) |
 | `POST` | `/agent/langgraph/query` | Submit text question to LangGraph reasoning agent (returns text + audio) |
 | `POST` | `/agent/langgraph/query/audio` | Submit voice/audio question to LangGraph reasoning agent (returns text + audio) |
-| `POST` | `/tts/synthesize` | Synthesize arbitrary text into base64 encoded audio |
+| `POST` | `/tts/synthesize` | Synthesize text into base64 encoded audio with `provider`, `voice`, and `speed` controls |
 | `POST` | `/tts/stream` | Stream synthesized audio directly as binary `audio/mpeg` or `audio/wav` |
-| `POST` | `/tts/validate` | Validate synthesized audio and optional STT transcript similarity for text inputs |
+| `POST` | `/tts/validate` | Validate audio signal quality (SNR, clipping), WER/CER, latency (RTF), and return `TTSQualityMetrics` |
 | `GET` | `/documents/` | List all indexed documents |
 | `GET` | `/documents/{page_id}` | Retrieve specific document details |
 | `PATCH` | `/documents/{page_id}` | Update document metadata/content |
@@ -286,25 +296,12 @@ streamlit run frontend/eval_dashboard.py
 
 ---
 
-## 🐳 Observability & Monitoring
-
-Launch local Prometheus and Grafana instances using Docker Compose:
-
-```bash
-docker compose -f docker/docker-compose.yml up -d
-```
-
-* **Prometheus**: `http://localhost:9090`
-* **Grafana**: `http://localhost:3000` (Default credentials: `admin` / `admin`)
-
----
-
 ## 🧪 Unit & Integration Testing
 
-Run the full pytest suite (including STT, TTS service, and audio ingestion tests):
+Run the full pytest suite (including Kokoro TTS, TTS evaluation metrics, STT, RAG, and Agent tests):
 
 ```bash
-pytest
+./.venv/bin/pytest
 ```
 
 ---

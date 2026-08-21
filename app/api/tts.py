@@ -9,7 +9,7 @@ import io
 
 from app.models.schemas import TTSRequest, TTSResponse, TTSValidationRequest, TTSValidationResponse
 from app.services.audio_validation_service import AudioValidationService
-from app.services.tts_service import tts_service
+from app.services.tts_service import TTSService, tts_service
 
 router = APIRouter(prefix="/tts", tags=["tts"])
 
@@ -21,7 +21,8 @@ async def synthesize_text(request: TTSRequest):
         if not request.text or not request.text.strip():
             raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
 
-        audio_base64 = await tts_service.synthesize_base64(request.text, voice=request.voice)
+        service = TTSService(provider=request.provider) if request.provider else tts_service
+        audio_base64 = await service.synthesize_base64(request.text, voice=request.voice)
         return TTSResponse(
             text=request.text,
             audio_base64=audio_base64,
@@ -40,7 +41,8 @@ async def stream_audio(request: TTSRequest):
         if not request.text or not request.text.strip():
             raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
 
-        audio_bytes = await tts_service.synthesize_bytes(request.text, voice=request.voice)
+        service = TTSService(provider=request.provider) if request.provider else tts_service
+        audio_bytes = await service.synthesize_bytes(request.text, voice=request.voice)
         if not audio_bytes:
             raise HTTPException(status_code=500, detail="Failed to synthesize audio bytes.")
 
@@ -54,26 +56,27 @@ async def stream_audio(request: TTSRequest):
 
 @router.post("/validate", response_model=TTSValidationResponse)
 async def validate_audio_pipeline(request: TTSValidationRequest):
-    """Validate the audio pipeline by checking synthesized audio and optional transcript similarity."""
+    """Validate the audio pipeline by checking synthesized audio, signal quality, latency, and transcript metrics."""
     try:
         if not request.text or not request.text.strip():
             raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
 
-        audio_bytes = await tts_service.synthesize_bytes(request.text, voice=request.voice)
-        validator = AudioValidationService()
-        tts_result = validator.validate_tts_output(audio_bytes)
+        service = TTSService(provider=request.provider) if request.provider else tts_service
+        audio_bytes, elapsed_ms = await service.synthesize_with_metrics(request.text, voice=request.voice)
 
-        if request.expected_text is not None:
-            stt_result = {"text": request.stt_text or ""}
-            stt_details = validator.validate_stt_output(stt_result, request.expected_text)
-        else:
-            stt_details = {
-                "ok": True,
-                "text": request.stt_text or "",
-                "expected_text": request.expected_text or "",
-                "similarity": 1.0,
-                "word_error_rate": 0.0,
-            }
+        validator = AudioValidationService()
+        expected = request.expected_text or request.text
+        stt_transcription = request.stt_text if request.stt_text is not None else expected
+
+        quality_metrics = validator.evaluate_full_tts_quality(
+            prompt_text=expected,
+            audio_bytes=audio_bytes,
+            stt_text=stt_transcription,
+            synthesis_time_ms=elapsed_ms,
+        )
+
+        tts_result = validator.validate_tts_output(audio_bytes)
+        stt_details = validator.validate_stt_output({"text": stt_transcription}, expected)
 
         return TTSValidationResponse(
             text=request.text,
@@ -84,6 +87,7 @@ async def validate_audio_pipeline(request: TTSValidationRequest):
             word_error_rate=stt_details["word_error_rate"],
             tts_details=tts_result,
             stt_details=stt_details,
+            metrics=quality_metrics,
         )
     except HTTPException:
         raise

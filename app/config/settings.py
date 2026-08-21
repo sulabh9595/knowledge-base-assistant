@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     tts_provider: str = "edge-tts"
     tts_default_voice: str = "en-US-AvaNeural"
     tts_audio_format: str = "mp3"
+    kokoro_tts_enabled: bool = True
+    kokoro_tts_voice: str = "af_heart"
+    kokoro_tts_speed: float = 1.0
+    kokoro_tts_lang_code: str = "a"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

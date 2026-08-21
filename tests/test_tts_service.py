@@ -56,3 +56,17 @@ async def test_tts_service_azure_provider_mock():
     with patch.object(service, "_create_azure_service", return_value=MockAzureSpeechService()):
         result = await service.synthesize_bytes("Hello from Azure")
         assert result == b"AZURE_FAKE_AUDIO"
+
+
+@pytest.mark.asyncio
+async def test_tts_service_kokoro_provider_mock():
+    """Verify Kokoro provider branch is invoked and returns audio bytes."""
+    service = TTSService(provider="kokoro")
+
+    class MockKokoroSpeechService:
+        def synthesize_bytes(self, text: str, voice: Optional[str] = None, speed: float = 1.0, audio_format: str = "wav") -> bytes:
+            return b"KOKORO_FAKE_AUDIO"
+
+    with patch.object(service, "_create_kokoro_service", return_value=MockKokoroSpeechService()):
+        result = await service.synthesize_bytes("Hello from Kokoro TTS", voice="af_heart")
+        assert result == b"KOKORO_FAKE_AUDIO"

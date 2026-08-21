@@ -1,0 +1,16 @@
+[
+  {
+    "case_id": "opik_001",
+    "input": "What is the knowledge ingestion policy for new Confluence pages?",
+    "expected_output": "The knowledge ingestion policy requires Confluence documents to be ingested, enriched with metadata, and indexed into the local vector store for grounded retrieval.",
+    "query_type": "factual",
+    "target": "rag"
+  },
+  {
+    "case_id": "opik_002",
+    "input": "How does the LangGraph agent use tools to answer a multi-step question?",
+    "expected_output": "The LangGraph agent uses tool-based retrieval and graph reasoning to gather evidence, reconcile sources, and generate a grounded answer with transparent citations.",
+    "query_type": "agent",
+    "target": "agent"
+  }
+]

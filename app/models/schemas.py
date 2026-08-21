@@ -127,6 +127,8 @@ class AudioQueryResponse(BaseModel):
 class TTSRequest(BaseModel):
     text: str
     voice: Optional[str] = None
+    provider: Optional[str] = None
+    speed: Optional[float] = 1.0
     format: str = "mp3"
 
 
@@ -136,11 +138,43 @@ class TTSResponse(BaseModel):
     format: str = "mp3"
 
 
+class TTSQualityMetrics(BaseModel):
+    # Latency & Performance
+    synthesis_time_ms: float = 0.0
+    audio_duration_sec: float = 0.0
+    real_time_factor: float = 0.0
+    time_to_first_chunk_ms: Optional[float] = None
+
+    # Signal & Audio Quality
+    sample_rate: int = 24000
+    channels: int = 1
+    signal_to_noise_ratio_db: float = 0.0
+    clipping_ratio: float = 0.0
+    peak_amplitude: float = 0.0
+
+    # Faithfulness & Pronunciation
+    word_error_rate: float = 0.0
+    character_error_rate: float = 0.0
+    text_similarity: float = 1.0
+    transcribed_text: str = ""
+
+    # Prosody & Rhythm
+    mean_f0_hz: Optional[float] = None
+    f0_std_dev_hz: Optional[float] = None
+    pause_ratio: float = 0.0
+    words_per_minute: float = 0.0
+
+    # Overall Evaluation Summary
+    overall_quality_pass: bool = True
+    quality_score: float = 100.0
+
+
 class TTSValidationRequest(BaseModel):
     text: str
     expected_text: Optional[str] = None
     stt_text: Optional[str] = None
     voice: Optional[str] = None
+    provider: Optional[str] = None
     format: str = "mp3"
 
 
@@ -153,6 +187,7 @@ class TTSValidationResponse(BaseModel):
     word_error_rate: float
     tts_details: dict[str, Any]
     stt_details: dict[str, Any]
+    metrics: Optional[TTSQualityMetrics] = None
 
 
 

@@ -6,11 +6,27 @@ import os
 import tempfile
 import asyncio
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
+
+
+KOKORO_VOICE_MAP = {
+    "af_heart": "en-US-AvaNeural",
+    "af_bella": "en-US-EmmaNeural",
+    "am_adam": "en-US-AndrewNeural",
+    "am_michael": "en-US-GuyNeural",
+    "bf_emma": "en-GB-SoniaNeural",
+}
+
+
+def _resolve_edge_voice(voice: Optional[str]) -> str:
+    """Map Kokoro voice names to equivalent high-quality Edge TTS neural voices."""
+    if not voice:
+        return getattr(settings, "tts_default_voice", "en-US-AvaNeural")
+    return KOKORO_VOICE_MAP.get(voice, voice)
 
 
 class TTSService:
@@ -30,6 +46,17 @@ class TTSService:
         clean_text = text.replace("#", "").replace("*", "").replace("`", "").strip()
         selected_voice = voice or self.default_voice
 
+        # Kokoro TTS provider (Local Neural TTS)
+        if self.provider == "kokoro":
+            try:
+                kokoro_service = self._create_kokoro_service()
+                data = await asyncio.to_thread(kokoro_service.synthesize_bytes, clean_text, voice=selected_voice)
+                if data:
+                    logger.info("Synthesized audio successfully using Kokoro TTS.")
+                    return data
+            except Exception as e:
+                logger.warning(f"Kokoro TTS synthesis failed: {e}. Falling back to edge-tts/other engines with mapped voice...")
+
         # Azure Speech provider
         if self.provider == "azure":
             try:
@@ -41,25 +68,25 @@ class TTSService:
             except Exception as e:
                 logger.warning(f"Azure Speech synthesis failed: {e}. Falling back to existing engines...")
 
-        # 1. Primary Engine: edge-tts (Microsoft Neural Voices)
-        if self.provider == "edge-tts":
-            try:
-                import edge_tts
+        # 1. Primary / Fallback Engine: edge-tts (Microsoft Neural Voices)
+        edge_voice = _resolve_edge_voice(selected_voice)
+        try:
+            import edge_tts
 
-                communicate = edge_tts.Communicate(clean_text, selected_voice)
-                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
-                    tmp_path = tmp.name
+            communicate = edge_tts.Communicate(clean_text, edge_voice)
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                tmp_path = tmp.name
 
-                await communicate.save(tmp_path)
-                with open(tmp_path, "rb") as f:
-                    data = f.read()
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-                if data:
-                    logger.info("Synthesized audio successfully using edge-tts.")
-                    return data
-            except Exception as e:
-                logger.warning(f"edge-tts synthesis failed: {e}. Trying secondary gTTS engine...")
+            await communicate.save(tmp_path)
+            with open(tmp_path, "rb") as f:
+                data = f.read()
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            if data:
+                logger.info(f"Synthesized audio successfully using edge-tts with voice '{edge_voice}'.")
+                return data
+        except Exception as e:
+            logger.warning(f"edge-tts synthesis failed: {e}. Trying secondary gTTS engine...")
 
         # 2. Secondary Engine: gTTS (Google Text-to-Speech)
         try:
@@ -137,12 +164,24 @@ class TTSService:
         from app.services.azure_speech_service import AzureSpeechService
         return AzureSpeechService()
 
+    def _create_kokoro_service(self) -> Any:
+        from app.services.kokoro_tts_service import KokoroTTSService
+        return KokoroTTSService()
+
     async def synthesize_base64(self, text: str, voice: Optional[str] = None) -> str:
         """Synthesize text into a Base64-encoded audio string."""
         audio_bytes = await self.synthesize_bytes(text, voice)
         if not audio_bytes:
             return ""
         return base64.b64encode(audio_bytes).decode("utf-8")
+
+    async def synthesize_with_metrics(self, text: str, voice: Optional[str] = None) -> Tuple[bytes, float]:
+        """Synthesize text and return (audio_bytes, synthesis_time_ms)."""
+        import time
+        start_time = time.perf_counter()
+        audio_bytes = await self.synthesize_bytes(text, voice)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+        return audio_bytes, round(elapsed_ms, 2)
 
 
 tts_service = TTSService()

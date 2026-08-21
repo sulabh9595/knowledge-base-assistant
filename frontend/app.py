@@ -245,17 +245,37 @@ with tabs[3]:
 
 with tabs[4]:
     st.header("🔊 Text-to-Audio (TTS) Synthesizer")
-    st.markdown("Convert arbitrary text into spoken audio.")
+    st.markdown("Convert arbitrary text into spoken audio using Local Kokoro Neural TTS, Microsoft Edge TTS, Azure, or system fallbacks.")
+
+    provider_selection = st.selectbox(
+        "Select TTS Engine Provider",
+        ["kokoro", "edge-tts", "azure", "gTTS", "say", "pyttsx3"],
+        key="tts_provider_select"
+    )
+
+    if provider_selection == "kokoro":
+        voice_options = ["af_heart", "af_bella", "am_adam", "am_michael", "bf_emma"]
+    elif provider_selection == "azure":
+        voice_options = ["en-US-JennyNeural", "en-US-GuyNeural", "en-GB-SoniaNeural"]
+    else:
+        voice_options = ["en-US-AvaNeural", "en-US-AndrewNeural", "en-GB-SoniaNeural"]
 
     text_to_speak = st.text_area("Text to Synthesize", "Welcome to the Enterprise Agentic Knowledge Platform. How can I assist you today?", key="tts_input_text")
-    voice_selection = st.selectbox("Select Voice", ["en-US-AvaNeural", "en-US-AndrewNeural", "en-GB-SoniaNeural"], key="tts_voice_select")
+    voice_selection = st.selectbox("Select Voice", voice_options, key="tts_voice_select")
+    speed_selection = st.slider("Speaking Speed Multiplier", min_value=0.5, max_value=2.0, value=1.0, step=0.1, key="tts_speed_select")
 
     if st.button("Synthesize Speech"):
         if not text_to_speak.strip():
             st.warning("Please enter text to synthesize.")
         else:
             try:
-                result = post_json("/tts/synthesize", {"text": text_to_speak, "voice": voice_selection})
+                payload = {
+                    "text": text_to_speak,
+                    "voice": voice_selection,
+                    "provider": provider_selection,
+                    "speed": speed_selection
+                }
+                result = post_json("/tts/synthesize", payload)
                 st.success("Speech synthesized successfully!")
                 render_audio_player(result)
             except httpx.HTTPError as exc:
