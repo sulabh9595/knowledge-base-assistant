@@ -5,15 +5,23 @@
 import os
 import streamlit as st
 import httpx
+import importlib
+
+try:
+    from frontend.eval_dashboard import render_eval_dashboard, render_pytest_dashboard, render_tts_benchmark_section
+except ImportError:
+    from eval_dashboard import render_eval_dashboard, render_pytest_dashboard, render_tts_benchmark_section
+
+
 
 
 st.set_page_config(page_title="Knowledge Base Assistant UI", layout="wide")
 
 default_backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
-BASE_URL = st.sidebar.text_input("Backend URL", default_backend_url)
+BASE_URL = st.sidebar.text_input("Backend URL", default_backend_url, key="app_sidebar_backend_url")
 
 st.sidebar.markdown("---")
-enable_tts = st.sidebar.checkbox("🔊 Enable Text-to-Speech Output", value=True)
+enable_tts = st.sidebar.checkbox("🔊 Enable Text-to-Speech Output", value=True, key="app_sidebar_enable_tts")
 st.sidebar.write("Use this UI to ingest Confluence spaces, query RAG / LangGraph agents, and synthesize speech.")
 
 
@@ -55,13 +63,13 @@ def render_audio_player(result: dict):
 
 
 st.title("Knowledge Base Assistant")
-st.markdown("A simple Streamlit UI for document ingestion, RAG querying, LangGraph agent reasoning, and Text-to-Speech synthesis.")
+st.markdown("A simple Streamlit UI for document ingestion, RAG querying, LangGraph agent reasoning, Text-to-Speech synthesis, and DeepEval evaluation analytics.")
 
-tabs = st.tabs(["Health", "Document & Audio Ingestion", "RAG Query", "LangGraph Agent", "Text-to-Audio (TTS)"])
+tabs = st.tabs(["Health", "Document & Audio Ingestion", "RAG Query", "LangGraph Agent", "Text-to-Audio (TTS)", "📊 DeepEval & Quality Dashboard", "🧪 Pytest & Test Suite Results"])
 
 with tabs[0]:
     st.header("Service Health")
-    if st.button("Check health"):
+    if st.button("Check health", key="app_btn_check_health"):
         try:
             health = get_json("/health")
             st.success("Backend is available")
@@ -72,11 +80,11 @@ with tabs[0]:
 with tabs[1]:
     st.header("Document & Audio Ingestion")
 
-    ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload", "Audio Recording / Meeting Ingestion"])
+    ingest_type = st.radio("Select Ingestion Method", ["Confluence Space", "Local File Upload", "Audio Recording / Meeting Ingestion"], key="app_radio_ingest_type")
 
     if ingest_type == "Confluence Space":
         space_key = st.text_input("Space Key", key="confluence_space_key")
-        if st.button("Ingest Confluence Space"):
+        if st.button("Ingest Confluence Space", key="app_btn_ingest_confluence"):
             if not space_key:
                 st.warning("Enter a Confluence space key before ingesting.")
             else:
@@ -97,9 +105,10 @@ with tabs[1]:
     elif ingest_type == "Local File Upload":
         uploaded_file = st.file_uploader(
             "Choose a PDF, Word, Text, or Audio file",
-            type=["pdf", "docx", "txt", "md", "mp3", "wav", "m4a", "ogg", "flac"]
+            type=["pdf", "docx", "txt", "md", "mp3", "wav", "m4a", "ogg", "flac"],
+            key="app_uploader_local_file"
         )
-        if st.button("Upload and Ingest File"):
+        if st.button("Upload and Ingest File", key="app_btn_upload_file"):
             if not uploaded_file:
                 st.warning("Please select a file first.")
             else:
@@ -118,11 +127,11 @@ with tabs[1]:
             type=["mp3", "wav", "m4a", "ogg", "flac", "aac"],
             key="ingest_audio_file"
         )
-        gen_summary = st.checkbox("Generate Local Executive Summary & Action Items (Qwen3:8b)", value=True)
+        gen_summary = st.checkbox("Generate Local Executive Summary & Action Items (Qwen3:8b)", value=True, key="app_chk_gen_summary")
 
         if audio_file:
             st.audio(audio_file)
-            if st.button("Transcribe & Ingest Audio"):
+            if st.button("Transcribe & Ingest Audio", key="app_btn_transcribe_audio"):
                 try:
                     files = {"file": (audio_file.name, audio_file.getvalue(), audio_file.type or "audio/wav")}
                     path = f"/ingest/audio?generate_summary={str(gen_summary).lower()}"
@@ -148,8 +157,8 @@ with tabs[2]:
 
     if query_mode == "Text Question":
         question = st.text_area("Question", key="rag_question")
-        top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3)
-        if st.button("Query RAG"):
+        top_k = st.slider("Top K documents", min_value=1, max_value=10, value=3, key="rag_text_top_k")
+        if st.button("Query RAG", key="app_btn_query_rag"):
             if not question.strip():
                 st.warning("Enter a question to query the RAG endpoint.")
             else:
@@ -177,7 +186,7 @@ with tabs[2]:
 
         if selected_audio:
             st.audio(selected_audio)
-            if st.button("Submit Voice Query"):
+            if st.button("Submit Voice Query", key="app_btn_submit_voice_rag"):
                 try:
                     files = {"file": (getattr(selected_audio, "name", "voice_query.wav"), selected_audio.getvalue(), "audio/wav")}
                     result = post_file(f"/rag/query/audio?top_k={top_k}", files)
@@ -198,7 +207,7 @@ with tabs[3]:
     if langgraph_query_mode == "Text Question":
         question = st.text_area("Question", key="langgraph_question")
         top_k = st.slider("Top K nodes", min_value=1, max_value=10, value=3, key="langgraph_top_k")
-        if st.button("Query LangGraph Agent"):
+        if st.button("Query LangGraph Agent", key="app_btn_query_langgraph"):
             if not question.strip():
                 st.warning("Enter a question to query the LangGraph agent.")
             else:
@@ -229,7 +238,7 @@ with tabs[3]:
 
         if selected_lg_audio:
             st.audio(selected_lg_audio)
-            if st.button("Submit Voice Query to Agent"):
+            if st.button("Submit Voice Query to Agent", key="app_btn_submit_voice_langgraph"):
                 try:
                     files = {"file": (getattr(selected_lg_audio, "name", "voice_query.wav"), selected_lg_audio.getvalue(), "audio/wav")}
                     result = post_file(f"/agent/langgraph/query/audio?top_k={top_k}", files)
@@ -264,7 +273,7 @@ with tabs[4]:
     voice_selection = st.selectbox("Select Voice", voice_options, key="tts_voice_select")
     speed_selection = st.slider("Speaking Speed Multiplier", min_value=0.5, max_value=2.0, value=1.0, step=0.1, key="tts_speed_select")
 
-    if st.button("Synthesize Speech"):
+    if st.button("Synthesize Speech", key="app_btn_synthesize_speech"):
         if not text_to_speak.strip():
             st.warning("Please enter text to synthesize.")
         else:
@@ -280,4 +289,15 @@ with tabs[4]:
                 render_audio_player(result)
             except httpx.HTTPError as exc:
                 st.error(f"Text-to-Speech synthesis failed: {exc}")
+
+    st.markdown("---")
+    render_tts_benchmark_section(key_prefix="app_tts_dash")
+
+with tabs[5]:
+    render_eval_dashboard()
+
+with tabs[6]:
+    render_pytest_dashboard()
+
+
 

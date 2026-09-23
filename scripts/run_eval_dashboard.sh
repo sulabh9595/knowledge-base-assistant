@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Launcher for the DeepEval evaluation dashboard.
+# Launcher for the Unified Streamlit UI (including DeepEval Evaluation Dashboard).
 #
-# Runs the Streamlit dashboard on port 8502 so it does not collide with
-# the main frontend (frontend/app.py), which stays on the default 8501.
+# Launches the unified frontend application (frontend/app.py) containing all 6 tabs.
 #
 # Usage:
 #   ./scripts/run_eval_dashboard.sh
-#   PORT=9000 ./scripts/run_eval_dashboard.sh   # override port
+#   PORT=8501 ./scripts/run_eval_dashboard.sh   # override port
 #
 # Stop with Ctrl-C.
 
@@ -17,17 +16,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Default port; allow override via environment variable.
-PORT="${PORT:-8502}"
+PORT="${PORT:-8501}"
 
 cd "${PROJECT_ROOT}"
 
-# Prepend the project root to PYTHONPATH so Python resolves `app.config...`
-# to the real top-level `app/` package, not to the sibling frontend/app.py
-# (which lives next to this dashboard and would otherwise shadow the import).
 export PYTHONPATH="${PROJECT_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
 
-echo "Starting DeepEval evaluation dashboard on http://localhost:${PORT}"
-exec streamlit run frontend/eval_dashboard.py \
+echo "Starting Unified Streamlit Web UI on http://localhost:${PORT}"
+exec streamlit run frontend/app.py \
     --server.port "${PORT}" \
     --server.headless true \
     --browser.gatherUsageStats false
+
